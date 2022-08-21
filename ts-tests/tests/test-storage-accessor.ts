@@ -1,0 +1,498 @@
+import { expect } from "chai";
+import * as $ from "parity-scale-codec";
+
+import PalletStorageAccessor from "../build/contracts/PalletStorageAccessor.json";
+import {
+	createAndFinalizeBlock,
+	customRequest,
+	describeWithFrontier,
+} from "./util";
+import { AbiItem } from "web3-utils";
+import BN from "bn.js";
+
+describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
+	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
+	const GENESIS_ACCOUNT_PRIVATE_KEY =
+		"0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
+
+	const TEST_CONTRACT_BYTECODE = PalletStorageAccessor.bytecode;
+	const TEST_CONTRACT_ABI = PalletStorageAccessor.abi as AbiItem[];
+	let contractAddress; // = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a frontier node, it saves a lot of time.
+
+	before("create the contract", async function () {
+		this.timeout(15000);
+		const tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: TEST_CONTRACT_BYTECODE,
+				value: "0x00",
+				gasPrice: "0x01",
+				gas: "0x150000",
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		const resp = await customRequest(
+			context.web3,
+			"eth_sendRawTransaction",
+			[tx.rawTransaction]
+		);
+		await createAndFinalizeBlock(context.web3);
+		const receipt = await context.web3.eth.getTransactionReceipt(
+			resp.result
+		);
+		contractAddress = receipt.contractAddress;
+	});
+
+	it("get transaction by hash", async () => {
+		const latestBlock = await context.web3.eth.getBlock("latest");
+		expect(latestBlock.transactions.length).to.equal(1);
+
+		const tx_hash = latestBlock.transactions[0];
+		const tx = await context.web3.eth.getTransaction(tx_hash);
+		expect(tx.hash).to.equal(tx_hash);
+	});
+
+	it("should return contract method result", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		const [success, data] = await contract.methods
+			.getStorage("System", "Number", 0, "0x", "0x")
+			.call();
+		const blockNumber = $.u32
+			.decode(new Uint8Array(Buffer.from(data.slice(2), "hex")))
+			.toFixed();
+		expect(success).to.equal(true);
+		expect(blockNumber).to.equal("1");
+	});
+
+	it("should return contract method result", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		const [success, data] = await contract.methods
+			.getStorage("Timestamp", "Now", 0, "0x", "0x")
+			.call();
+		const timestamp = $.u64
+			.decode(new Uint8Array(Buffer.from(data.slice(2), "hex")))
+			.toString();
+		expect(success).to.equal(true);
+		expect(timestamp).to.equal("6000");
+	});
+
+	it("should read value from a single key map", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		const [success, data] = await contract.methods
+			.getStorage("EVM", "AccountCodes", 1, contractAddress, "0x")
+			.call();
+		const code = $.array($.u8).decode(
+			new Uint8Array(Buffer.from(data.slice(2), "hex"))
+		);
+		expect(success).to.equal(true);
+		expect(code).to.deep.equal(
+			Array.from(
+				Buffer.from(
+					PalletStorageAccessor.deployedBytecode.slice(2),
+					"hex"
+				)
+			)
+		);
+	});
+
+	it("should read value with offset", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		const [success, data] = await contract.methods
+			.getStorageWithOffset(
+				"EVM",
+				"AccountCodes",
+				1,
+				contractAddress,
+				"0x",
+				100
+			)
+			.call();
+		const code = Array.from(Buffer.from(data.slice(2), "hex"));
+		expect(success).to.equal(true);
+		expect(code).to.deep.equal(
+			Array.from(
+				Buffer.from(
+					PalletStorageAccessor.deployedBytecode.slice(2),
+					"hex"
+				)
+			).slice(98)
+		);
+	});
+
+	it("should read value with len", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		const [success, data] = await contract.methods
+			.getStorageWithLen(
+				"EVM",
+				"AccountCodes",
+				1,
+				contractAddress,
+				"0x",
+				4
+			)
+			.call();
+		const len = $.compact.decode(
+			new Uint8Array(Buffer.from(data.slice(2), "hex"))
+		);
+		expect(success).to.equal(true);
+		expect(len).to.equal(
+			Buffer.from(PalletStorageAccessor.deployedBytecode.slice(2), "hex")
+				.length
+		);
+	});
+
+	it("should read value with offset and len", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		let [success, data] = await contract.methods
+			.getStorageWithOffsetLen(
+				"EVM",
+				"AccountCodes",
+				1,
+				contractAddress,
+				"0x",
+				2,
+				1000
+			)
+			.call();
+		const code = Array.from(Buffer.from(data.slice(2), "hex"));
+		expect(success).to.equal(true);
+		expect(code).to.deep.equal(
+			Array.from(
+				Buffer.from(
+					PalletStorageAccessor.deployedBytecode.slice(2),
+					"hex"
+				)
+			).slice(0, 1000)
+		);
+	});
+
+	it("should check value from a single key map for existence with offset and 0 len", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		let [success, data] = await contract.methods
+			.getStorageWithOffsetLen(
+				"EVM",
+				"AccountCodes",
+				1,
+				contractAddress,
+				"0x",
+				2,
+				0
+			)
+			.call();
+		expect(success).to.equal(true);
+		expect(data).to.equal(null);
+	});
+
+	it("should read value with offset and len", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		let [success, data] = await contract.methods
+			.getStorageWithOffsetLen(
+				"EVM",
+				"AccountCodes",
+				1,
+				contractAddress,
+				"0x",
+				20000,
+				10
+			)
+			.call();
+		expect(success).to.equal(true);
+		expect(data).to.equal(null);
+	});
+
+	it("should read value from a double key map", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+		let [success, data] = await contract.methods
+			.getStorage(
+				"EVM",
+				"AccountStorages",
+				2,
+				"0x6be02d1d3665660d22ff9624b7be0551ee1ac91b",
+				$.u256.encode(BigInt(123)).reverse()
+			)
+			.call();
+		expect(success).to.equal(true);
+		expect(
+			$.u256.decode(
+				new Uint8Array(Buffer.from(data.slice(2), "hex")).reverse()
+			)
+		).to.deep.equal(BigInt(456));
+	});
+
+	it("should read default value from a double key map", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+		let [success, data] = await contract.methods
+			.getStorage(
+				"EVM",
+				"AccountStorages",
+				2,
+				"0x6be02d1d3665660d22ff9624b7be0551ee1ac91b",
+				$.u256.encode(BigInt(0)).reverse()
+			)
+			.call();
+		expect(success).to.equal(true);
+		expect(
+			$.u256.decode(
+				new Uint8Array(Buffer.from(data.slice(2), "hex")).reverse()
+			)
+		).to.deep.equal(BigInt(0));
+	});
+
+	it("should read default with offset", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+		let [success, data] = await contract.methods
+			.getStorageWithOffset(
+				"EVM",
+				"AccountStorages",
+				2,
+				"0x6be02d1d3665660d22ff9624b7be0551ee1ac91b",
+				$.u256.encode(BigInt(0)).reverse(),
+				10
+			)
+			.call();
+		expect(success).to.equal(true);
+		expect(
+			Array.from(Buffer.from(data.slice(2), "hex"))
+		).to.deep.equal(
+			new Array(22).fill(0)
+		);
+	});
+
+	it("should read default with len", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+		let [success, data] = await contract.methods
+			.getStorageWithLen(
+				"EVM",
+				"AccountStorages",
+				2,
+				"0x6be02d1d3665660d22ff9624b7be0551ee1ac91b",
+				$.u256.encode(BigInt(0)).reverse(),
+				5
+			)
+			.call();
+		expect(success).to.equal(true);
+		expect(
+			Array.from(Buffer.from(data.slice(2), "hex"))
+		).to.deep.equal(
+			new Array(5).fill(0)
+		);
+	});
+
+	it("should read default with offset and len", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+		let [success, data] = await contract.methods
+			.getStorageWithOffsetLen(
+				"EVM",
+				"AccountStorages",
+				2,
+				"0x6be02d1d3665660d22ff9624b7be0551ee1ac91b",
+				$.u256.encode(BigInt(0)).reverse(),
+				30,
+				5
+			)
+			.call();
+		expect(success).to.equal(true);
+		expect(
+			Array.from(Buffer.from(data.slice(2), "hex"))
+		).to.deep.equal(
+			new Array(2).fill(0)
+		);
+	});
+
+	//
+	/*it("should get correct environmental block number", async function () {
+		// Solidity `block.number` is expected to return the same height at which the runtime call was made.
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, contractAddress, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		let block = await context.web3.eth.getBlock("latest");
+		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
+		await createAndFinalizeBlock(context.web3);
+		block = await context.web3.eth.getBlock("latest");
+		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
+	});
+
+	it("should get correct environmental block hash", async function () {
+		this.timeout(20000);
+		// Solidity `blockhash` is expected to return the ethereum block hash at a given height.
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, contractAddress, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		let number = (await context.web3.eth.getBlock("latest")).number;
+		let last = number + 256;
+		for(let i = number; i <= last; i++) {
+			let hash = (await context.web3.eth.getBlock("latest")).hash;
+			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
+			await createAndFinalizeBlock(context.web3);
+		}
+		// should not store more than 256 hashes
+		expect(await contract.methods.blockHash(number).call()).to.eq(
+			"0x0000000000000000000000000000000000000000000000000000000000000000"
+		);
+	});
+
+	it("should get correct environmental block gaslimit", async function () {
+		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, contractAddress, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		// Max u32
+		expect(await contract.methods.gasLimit().call()).to.eq('4294967295');
+	});
+
+	// Requires error handling
+	it.skip("should fail for missing parameters", async function () {
+		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], contractAddress, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x01",
+		});
+		await contract.methods
+			.multiply()
+			.call()
+			.catch((err) =>
+				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
+			);
+	});
+
+	// Requires error handling
+	it.skip("should fail for too many parameters", async function () {
+		const contract = new context.web3.eth.Contract(
+			[
+				{
+					...TEST_CONTRACT_ABI[0],
+					inputs: [
+						{ internalType: "uint256", name: "a", type: "uint256" },
+						{ internalType: "uint256", name: "b", type: "uint256" },
+					],
+				},
+			],
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+		await contract.methods
+			.multiply(3, 4)
+			.call()
+			.catch((err) =>
+				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
+			);
+	});
+
+	// Requires error handling
+	it.skip("should fail for invalid parameters", async function () {
+		const contract = new context.web3.eth.Contract(
+			[{ ...TEST_CONTRACT_ABI[0], inputs: [{ internalType: "address", name: "a", type: "address" }] }],
+			contractAddress,
+			{ from: GENESIS_ACCOUNT, gasPrice: "0x01" }
+		);
+		await contract.methods
+			.multiply("0x0123456789012345678901234567890123456789")
+			.call()
+			.catch((err) =>
+				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
+			);
+	});*/
+});

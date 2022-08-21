@@ -283,6 +283,21 @@ parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(u32::max_value());
 }
 
+storage_accessor_precompile::impl_pallet_storage_metadata_provider!(
+    for Runtime:
+        "System" => System,
+        "RandomnessCollectiveFlip" => RandomnessCollectiveFlip,
+        "Timestamp" => Timestamp,
+        "Aura" => Aura,
+        "Grandpa" => Grandpa,
+        "Balances" => Balances,
+        "TransactionPayment" => TransactionPayment,
+        "Sudo" => Sudo,
+        "Ethereum" => Ethereum,
+        "EVM" => EVM,
+        "DynamicFee" => DynamicFee
+);
+
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = pallet_dynamic_fee::Module<Self>;
 	type GasWeightMapping = ();
