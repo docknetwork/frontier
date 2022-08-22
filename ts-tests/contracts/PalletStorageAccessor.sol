@@ -14,7 +14,7 @@ contract PalletStorageAccessor {
     OffsetAndLength
   }
 
-  function getStorage(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey) public returns (bool, bytes memory value) {
+  function getStorage(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey) public returns (bool, bytes memory) {
     address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000009);
     bytes memory encodedKey = encodeKey(keyType, firstKey, secondKey);
     bytes memory palletBytes = bytes(pallet);
@@ -32,7 +32,7 @@ contract PalletStorageAccessor {
     );
   }
 
-  function getStorageWithOffset(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 offset) public returns (bool, bytes memory value) {
+  function getStorageWithOffset(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 offset) public returns (bool, bytes memory) {
     address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000009);
     bytes memory encodedKey = encodeKey(keyType, firstKey, secondKey);
     bytes memory palletBytes = bytes(pallet);
@@ -46,12 +46,12 @@ contract PalletStorageAccessor {
         memberBytes,
         encodedKey,
         Params.Offset,
-        reverse(offset)
+        compact(uint256(offset))
       )
     );
   }
 
-  function getStorageWithLen(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 len) public returns (bool, bytes memory value) {
+  function getStorageWithLen(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 len) public returns (bool, bytes memory) {
     address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000009);
     bytes memory encodedKey = encodeKey(keyType, firstKey, secondKey);
     bytes memory palletBytes = bytes(pallet);
@@ -65,12 +65,12 @@ contract PalletStorageAccessor {
         memberBytes,
         encodedKey,
         Params.Length,
-        reverse(len)
+        compact(uint256(len))
       )
     );
   }
 
-  function getStorageWithOffsetLen(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 offset, uint32 len) public returns (bool, bytes memory value) {
+  function getStorageWithOffsetLen(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 offset, uint32 len) public returns (bool, bytes memory) {
     address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000009);
     bytes memory encodedKey = encodeKey(keyType, firstKey, secondKey);
     bytes memory palletBytes = bytes(pallet);
@@ -84,13 +84,13 @@ contract PalletStorageAccessor {
         memberBytes,
         encodedKey,
         Params.OffsetAndLength,
-        reverse(offset),
-        reverse(len)
+        compact(uint256(offset)),
+        compact(uint256(len))
       )
     );
   }
 
-  function encodeKey(KeyType keyType, bytes calldata firstKey, bytes calldata secondKey) private pure returns (bytes memory value) {
+  function encodeKey(KeyType keyType, bytes calldata firstKey, bytes calldata secondKey) private pure returns (bytes memory) {
     bytes memory encodedKey;
     if (keyType == KeyType.NoKey) {
       encodedKey = abi.encodePacked(keyType);
@@ -112,22 +112,13 @@ contract PalletStorageAccessor {
     return encodedKey;
   }
 
-  function reverse(uint32 input) internal pure returns (uint32 v) {
-      v = input;
-
-      // swap bytes
-      v = ((v & 0xFF00FF00) >> 8) |
-          ((v & 0x00FF00FF) << 8);
-
-      // swap 2-byte long pairs
-      v = (v >> 16) | (v << 16);
-  }
-
-  function compact(uint256 len) private pure returns (bytes memory value) {
+  function compact(uint256 len) private pure returns (bytes memory) {
     if (len < 64) {
       return abi.encodePacked(uint8(len) << 2);
     } else if (len < 16384) {
-      return abi.encodePacked(uint8(len) << 2 | 1, uint8(len >> 8));
+      return abi.encodePacked(uint8(len) << 2 | 1, uint8(len >> 6));
+    } else if (len < 1073741824) {
+      return abi.encodePacked(uint8(len) << 2 | 2, uint8(len >> 6), uint8(len >> 14), uint8(len >> 22));
     } else {
       revert("Unimplemented");
     }

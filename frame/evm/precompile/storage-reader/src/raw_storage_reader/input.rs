@@ -2,7 +2,7 @@ use codec::{Decode, Encode};
 use sp_std::prelude::*;
 
 #[derive(Encode, Decode, Debug, Clone)]
-pub struct Input {
+pub struct RawStorageReaderInput {
     pub key: Vec<u8>,
     pub params: InputParams,
 }
@@ -10,7 +10,12 @@ pub struct Input {
 #[derive(Debug, Encode, Decode, Clone)]
 pub enum InputParams {
     None,
-    Offset(u32),
-    Len(u32),
-    OffsetAndLen { offset: u32, len: u32 },
+    Offset(#[codec(compact)] u32),
+    Len(#[codec(compact)] u32),
+    OffsetAndLen {
+        #[codec(compact)]
+        offset: u32,
+        #[codec(compact)]
+        len: u32,
+    },
 }

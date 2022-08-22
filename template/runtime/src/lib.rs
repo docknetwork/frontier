@@ -223,7 +223,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
-	#[cfg(feature = "aura")]
+	#[cfg(not(feature = "manual-seal"))]
 	type OnTimestampSet = Aura;
 	#[cfg(feature = "manual-seal")]
 	type OnTimestampSet = ();
@@ -281,9 +281,10 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F>
 parameter_types! {
 	pub const ChainId: u64 = 42;
 	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+	pub const ByteReadWeight: Weight = 10;
 }
 
-storage_accessor_precompile::impl_pallet_storage_metadata_provider!(
+pallet_evm_precompile_storage_reader::impl_pallet_storage_metadata_provider!(
     for Runtime:
         "System" => System,
         "RandomnessCollectiveFlip" => RandomnessCollectiveFlip,
@@ -299,6 +300,7 @@ storage_accessor_precompile::impl_pallet_storage_metadata_provider!(
 );
 
 impl pallet_evm::Config for Runtime {
+	type ByteReadWeight = ByteReadWeight;
 	type FeeCalculator = pallet_dynamic_fee::Module<Self>;
 	type GasWeightMapping = ();
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
@@ -317,6 +319,8 @@ impl pallet_evm::Config for Runtime {
 		pallet_evm_precompile_simple::ECRecoverPublicKey,
 		pallet_evm_precompile_sha3fips::Sha3FIPS256,
 		pallet_evm_precompile_sha3fips::Sha3FIPS512,
+		pallet_evm_precompile_storage_reader::MetaStorageReader<Runtime>,
+		pallet_evm_precompile_storage_reader::RawStorageReader<Runtime>
 	);
 	type ChainId = ChainId;
 	type BlockGasLimit = BlockGasLimit;
@@ -668,6 +672,7 @@ impl_runtime_apis! {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 			use pallet_evm::Module as PalletEvmBench;
 			impl frame_system_benchmarking::Config for Runtime {}
+			impl pallet_evm_precompile_storage_reader::meta_storage_reader::benchmarks::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![];
 
@@ -675,6 +680,7 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, pallet_evm, PalletEvmBench::<Runtime>);
+			add_benchmark!(params, batches, pallet_evm_precompile_storage_reader, pallet_evm_precompile_storage_reader::meta_storage_reader::benchmarks::Module::<Runtime>);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

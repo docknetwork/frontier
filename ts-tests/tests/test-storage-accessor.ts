@@ -27,7 +27,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
 				gasPrice: "0x01",
-				gas: "0x150000",
+				gas: "0x180000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
@@ -52,7 +52,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		expect(tx.hash).to.equal(tx_hash);
 	});
 
-	it("should return contract method result", async function () {
+	it("should fail on invalid pallet", async function () {
 		const contract = new context.web3.eth.Contract(
 			TEST_CONTRACT_ABI,
 			contractAddress,
@@ -62,17 +62,69 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			}
 		);
 
-		const [success, data] = await contract.methods
+		const [success, rawData] = await contract.methods
+			.getStorage("A", "Number", 1, contractAddress, "0x")
+			.call();
+		expect(success).to.equal(false);
+		expect(rawData).to.equal(null);
+	});
+
+	it("should fail on invalid key", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		const [success, rawData] = await contract.methods
+			.getStorage("EVM", "AccountCodes", 0, "0x", "0x")
+			.call();
+		expect(success).to.equal(false);
+		expect(rawData).to.equal(null);
+	});
+
+	it("should fail on invalid storage member", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		const [success, rawData] = await contract.methods
+			.getStorage("EVM", "ABCDE", 1, contractAddress, "0x")
+			.call();
+		expect(success).to.equal(false);
+		expect(rawData).to.equal(null);
+	});
+
+	it("should read a value with no key", async function () {
+		const contract = new context.web3.eth.Contract(
+			TEST_CONTRACT_ABI,
+			contractAddress,
+			{
+				from: GENESIS_ACCOUNT,
+				gasPrice: "0x01",
+			}
+		);
+
+		const [success, rawData] = await contract.methods
 			.getStorage("System", "Number", 0, "0x", "0x")
 			.call();
-		const blockNumber = $.u32
-			.decode(new Uint8Array(Buffer.from(data.slice(2), "hex")))
-			.toFixed();
 		expect(success).to.equal(true);
+		const buffer = Buffer.from(rawData.slice(2), "hex");
+		const [found, ...data] = Array.from(buffer);
+		const blockNumber = $.u32.decode(new Uint8Array(data)).toFixed();
+		expect(!!found).to.equal(true);
 		expect(blockNumber).to.equal("1");
 	});
 
-	it("should return contract method result", async function () {
+	it("should read a value with no key", async function () {
 		const contract = new context.web3.eth.Contract(
 			TEST_CONTRACT_ABI,
 			contractAddress,
@@ -82,13 +134,14 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			}
 		);
 
-		const [success, data] = await contract.methods
+		const [success, rawData] = await contract.methods
 			.getStorage("Timestamp", "Now", 0, "0x", "0x")
 			.call();
-		const timestamp = $.u64
-			.decode(new Uint8Array(Buffer.from(data.slice(2), "hex")))
-			.toString();
 		expect(success).to.equal(true);
+		const buffer = Buffer.from(rawData.slice(2), "hex");
+		const [found, ...data] = Array.from(buffer);
+		const timestamp = $.u64.decode(new Uint8Array(data)).toString();
+		expect(!!found).to.equal(true);
 		expect(timestamp).to.equal("6000");
 	});
 
@@ -102,13 +155,14 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			}
 		);
 
-		const [success, data] = await contract.methods
+		const [success, rawData] = await contract.methods
 			.getStorage("EVM", "AccountCodes", 1, contractAddress, "0x")
 			.call();
-		const code = $.array($.u8).decode(
-			new Uint8Array(Buffer.from(data.slice(2), "hex"))
-		);
+		const buffer = Buffer.from(rawData.slice(2), "hex");
 		expect(success).to.equal(true);
+		const [found, ...data] = Array.from(buffer);
+		const code = $.array($.u8).decode(new Uint8Array(data));
+		expect(!!found).to.equal(true);
 		expect(code).to.deep.equal(
 			Array.from(
 				Buffer.from(
@@ -129,7 +183,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			}
 		);
 
-		const [success, data] = await contract.methods
+		const [success, rawData] = await contract.methods
 			.getStorageWithOffset(
 				"EVM",
 				"AccountCodes",
@@ -139,8 +193,11 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				100
 			)
 			.call();
-		const code = Array.from(Buffer.from(data.slice(2), "hex"));
 		expect(success).to.equal(true);
+		const buffer = Buffer.from(rawData.slice(2), "hex");
+		const [found, ...data] = Array.from(buffer);
+		const code = Array.from(data);
+		expect(!!found).to.equal(true);
 		expect(code).to.deep.equal(
 			Array.from(
 				Buffer.from(
@@ -161,7 +218,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			}
 		);
 
-		const [success, data] = await contract.methods
+		const [success, rawData] = await contract.methods
 			.getStorageWithLen(
 				"EVM",
 				"AccountCodes",
@@ -171,10 +228,11 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				4
 			)
 			.call();
-		const len = $.compact.decode(
-			new Uint8Array(Buffer.from(data.slice(2), "hex"))
-		);
 		expect(success).to.equal(true);
+		const buffer = Buffer.from(rawData.slice(2), "hex");
+		const [found, ...data] = Array.from(buffer);
+		const len = $.compact.decode(new Uint8Array(data));
+		expect(!!found).to.equal(true);
 		expect(len).to.equal(
 			Buffer.from(PalletStorageAccessor.deployedBytecode.slice(2), "hex")
 				.length
@@ -191,7 +249,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			}
 		);
 
-		let [success, data] = await contract.methods
+		let [success, rawData] = await contract.methods
 			.getStorageWithOffsetLen(
 				"EVM",
 				"AccountCodes",
@@ -202,8 +260,11 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				1000
 			)
 			.call();
-		const code = Array.from(Buffer.from(data.slice(2), "hex"));
 		expect(success).to.equal(true);
+		const buffer = Buffer.from(rawData.slice(2), "hex");
+		const [found, ...data] = Array.from(buffer);
+		const code = Array.from(data);
+		expect(!!found).to.equal(true);
 		expect(code).to.deep.equal(
 			Array.from(
 				Buffer.from(
@@ -224,7 +285,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			}
 		);
 
-		let [success, data] = await contract.methods
+		let [success, rawData] = await contract.methods
 			.getStorageWithOffsetLen(
 				"EVM",
 				"AccountCodes",
@@ -236,7 +297,8 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			)
 			.call();
 		expect(success).to.equal(true);
-		expect(data).to.equal(null);
+		const [found] = Array.from(Buffer.from(rawData.slice(2), "hex"));
+		expect(!!found).to.equal(true);
 	});
 
 	it("should read value with offset and len", async function () {
@@ -249,7 +311,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			}
 		);
 
-		let [success, data] = await contract.methods
+		let [success, rawData] = await contract.methods
 			.getStorageWithOffsetLen(
 				"EVM",
 				"AccountCodes",
@@ -261,7 +323,8 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			)
 			.call();
 		expect(success).to.equal(true);
-		expect(data).to.equal(null);
+		const [found] = Array.from(Buffer.from(rawData.slice(2), "hex"));
+		expect(!!found).to.equal(true);
 	});
 
 	it("should read value from a double key map", async function () {
@@ -273,7 +336,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				gasPrice: "0x01",
 			}
 		);
-		let [success, data] = await contract.methods
+		let [success, rawData] = await contract.methods
 			.getStorage(
 				"EVM",
 				"AccountStorages",
@@ -282,12 +345,14 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				$.u256.encode(BigInt(123)).reverse()
 			)
 			.call();
+		const [found, ...data] = Array.from(
+			Buffer.from(rawData.slice(2), "hex")
+		);
 		expect(success).to.equal(true);
-		expect(
-			$.u256.decode(
-				new Uint8Array(Buffer.from(data.slice(2), "hex")).reverse()
-			)
-		).to.deep.equal(BigInt(456));
+		expect(!!found).to.equal(true);
+		expect($.u256.decode(new Uint8Array(data.reverse()))).to.deep.equal(
+			BigInt(456)
+		);
 	});
 
 	it("should read default value from a double key map", async function () {
@@ -299,7 +364,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				gasPrice: "0x01",
 			}
 		);
-		let [success, data] = await contract.methods
+		let [success, rawData] = await contract.methods
 			.getStorage(
 				"EVM",
 				"AccountStorages",
@@ -309,11 +374,11 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			)
 			.call();
 		expect(success).to.equal(true);
-		expect(
-			$.u256.decode(
-				new Uint8Array(Buffer.from(data.slice(2), "hex")).reverse()
-			)
-		).to.deep.equal(BigInt(0));
+		const [found, ...data] = Array.from(
+			Buffer.from(rawData.slice(2), "hex")
+		);
+		expect(!!found).to.equal(true);
+		expect($.u256.decode(new Uint8Array(data))).to.deep.equal(BigInt(0));
 	});
 
 	it("should read default with offset", async function () {
@@ -325,7 +390,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				gasPrice: "0x01",
 			}
 		);
-		let [success, data] = await contract.methods
+		let [success, rawData] = await contract.methods
 			.getStorageWithOffset(
 				"EVM",
 				"AccountStorages",
@@ -336,11 +401,11 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			)
 			.call();
 		expect(success).to.equal(true);
-		expect(
-			Array.from(Buffer.from(data.slice(2), "hex"))
-		).to.deep.equal(
-			new Array(22).fill(0)
+		const [found, ...data] = Array.from(
+			Buffer.from(rawData.slice(2), "hex")
 		);
+		expect(!!found).to.equal(true);
+		expect(data).to.deep.equal(new Array(22).fill(0));
 	});
 
 	it("should read default with len", async function () {
@@ -352,7 +417,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				gasPrice: "0x01",
 			}
 		);
-		let [success, data] = await contract.methods
+		let [success, rawData] = await contract.methods
 			.getStorageWithLen(
 				"EVM",
 				"AccountStorages",
@@ -363,11 +428,11 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			)
 			.call();
 		expect(success).to.equal(true);
-		expect(
-			Array.from(Buffer.from(data.slice(2), "hex"))
-		).to.deep.equal(
-			new Array(5).fill(0)
+		const [found, ...data] = Array.from(
+			Buffer.from(rawData.slice(2), "hex")
 		);
+		expect(!!found).to.equal(true);
+		expect(data).to.deep.equal(new Array(5).fill(0));
 	});
 
 	it("should read default with offset and len", async function () {
@@ -379,7 +444,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				gasPrice: "0x01",
 			}
 		);
-		let [success, data] = await contract.methods
+		let [success, rawData] = await contract.methods
 			.getStorageWithOffsetLen(
 				"EVM",
 				"AccountStorages",
@@ -390,109 +455,10 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				5
 			)
 			.call();
-		expect(success).to.equal(true);
-		expect(
-			Array.from(Buffer.from(data.slice(2), "hex"))
-		).to.deep.equal(
-			new Array(2).fill(0)
+		const [found, ...data] = Array.from(
+			Buffer.from(rawData.slice(2), "hex")
 		);
+		expect(!!found).to.equal(true);
+		expect(data).to.deep.equal(new Array(2).fill(0));
 	});
-
-	//
-	/*it("should get correct environmental block number", async function () {
-		// Solidity `block.number` is expected to return the same height at which the runtime call was made.
-		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, contractAddress, {
-			from: GENESIS_ACCOUNT,
-			gasPrice: "0x01",
-		});
-		let block = await context.web3.eth.getBlock("latest");
-		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
-		await createAndFinalizeBlock(context.web3);
-		block = await context.web3.eth.getBlock("latest");
-		expect(await contract.methods.currentBlock().call()).to.eq(block.number.toString());
-	});
-
-	it("should get correct environmental block hash", async function () {
-		this.timeout(20000);
-		// Solidity `blockhash` is expected to return the ethereum block hash at a given height.
-		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, contractAddress, {
-			from: GENESIS_ACCOUNT,
-			gasPrice: "0x01",
-		});
-		let number = (await context.web3.eth.getBlock("latest")).number;
-		let last = number + 256;
-		for(let i = number; i <= last; i++) {
-			let hash = (await context.web3.eth.getBlock("latest")).hash;
-			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
-			await createAndFinalizeBlock(context.web3);
-		}
-		// should not store more than 256 hashes
-		expect(await contract.methods.blockHash(number).call()).to.eq(
-			"0x0000000000000000000000000000000000000000000000000000000000000000"
-		);
-	});
-
-	it("should get correct environmental block gaslimit", async function () {
-		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, contractAddress, {
-			from: GENESIS_ACCOUNT,
-			gasPrice: "0x01",
-		});
-		// Max u32
-		expect(await contract.methods.gasLimit().call()).to.eq('4294967295');
-	});
-
-	// Requires error handling
-	it.skip("should fail for missing parameters", async function () {
-		const contract = new context.web3.eth.Contract([{ ...TEST_CONTRACT_ABI[0], inputs: [] }], contractAddress, {
-			from: GENESIS_ACCOUNT,
-			gasPrice: "0x01",
-		});
-		await contract.methods
-			.multiply()
-			.call()
-			.catch((err) =>
-				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
-			);
-	});
-
-	// Requires error handling
-	it.skip("should fail for too many parameters", async function () {
-		const contract = new context.web3.eth.Contract(
-			[
-				{
-					...TEST_CONTRACT_ABI[0],
-					inputs: [
-						{ internalType: "uint256", name: "a", type: "uint256" },
-						{ internalType: "uint256", name: "b", type: "uint256" },
-					],
-				},
-			],
-			contractAddress,
-			{
-				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
-			}
-		);
-		await contract.methods
-			.multiply(3, 4)
-			.call()
-			.catch((err) =>
-				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
-			);
-	});
-
-	// Requires error handling
-	it.skip("should fail for invalid parameters", async function () {
-		const contract = new context.web3.eth.Contract(
-			[{ ...TEST_CONTRACT_ABI[0], inputs: [{ internalType: "address", name: "a", type: "address" }] }],
-			contractAddress,
-			{ from: GENESIS_ACCOUNT, gasPrice: "0x01" }
-		);
-		await contract.methods
-			.multiply("0x0123456789012345678901234567890123456789")
-			.call()
-			.catch((err) =>
-				expect(err.message).to.equal(`Returned error: VM Exception while processing transaction: revert.`)
-			);
-	});*/
 });

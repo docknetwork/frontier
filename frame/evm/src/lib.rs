@@ -279,6 +279,8 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	type BlockGasLimit: Get<U256>;
 	/// EVM execution runner.
 	type Runner: Runner<Self>;
+	/// Weight to be applied by storage reader precompile when providing data to the
+	type ByteReadWeight: Get<Weight>;
 
 	/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
 	/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees

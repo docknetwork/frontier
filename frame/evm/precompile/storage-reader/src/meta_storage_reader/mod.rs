@@ -1,0 +1,149 @@
+use core::{convert::TryInto, marker::PhantomData};
+
+use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
+use fp_evm::Precompile;
+use frame_support::log::debug;
+use pallet_evm::GasWeightMapping;
+use sp_std::{borrow::Cow, prelude::*};
+
+use input::MetaStorageReaderInput;
+use codec::Decode;
+use frame_metadata::{StorageEntryModifier, StorageEntryType};
+
+use crate::raw_storage_reader::RawStorageReader;
+pub use pallet_storage_metadata_provider::*;
+use utils::*;
+
+use key::Key;
+
+pub mod benchmarks;
+pub mod input;
+pub mod key;
+mod pallet_storage_metadata_provider;
+#[cfg(test)]
+mod tests;
+mod utils;
+mod weights;
+
+/// Precompile allowing to read any pallet storage member data using provided key encoded accoding to the corresponding metadata.
+/// Unlike `RawStorageReader`, default members will be instantiated in case of absence.
+/// Input:
+/// - compact encoded length of the pallet name (UTF-8)
+/// - pallet name (UTF-8)
+/// - compact encoded length of the pallet's storage member name (UTF-8)
+/// - pallet's storage member name (UTF-8)
+/// - byte representing key type: 0 - NoKey, 1 - MapKey, 2 - DoubleMapKey
+/// - encoded key
+///   - nothing for NoKey
+///   - compact encoded length of the unerlying key bytes followed by bytes for MapKey
+///   - two compact encoded lengths of the unerlying key bytes followed by bytes for DoubleMapKey
+/// - byte representing params: 0 - no additional params, 1 - offset, 2 - length, 3 - offset and length
+/// - corresponding compact encoded offset, length, or offset followed by length
+#[derive(Default, Debug)]
+pub struct MetaStorageReader<T>(PhantomData<T>);
+
+impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaStorageReader<T> {
+    fn execute(
+        mut input: &[u8],
+        target_gas: Option<u64>,
+        _: &Context,
+    ) -> core::result::Result<PrecompileOutput, ExitError> {
+        debug!(
+            "`MetaStorageReader` input: {:?}, target gas: {:?}",
+            input, target_gas
+        );
+
+        let MetaStorageReaderInput {
+            pallet,
+            entry,
+            key,
+            params: input_params,
+        } = MetaStorageReaderInput::decode(&mut input).map_err(Error::Decoding)?;
+
+        debug!(
+            "`MetaStorageReader` decoded input: pallet = {:?}, entry = {:?}, key = {:?}, params = {:?}",
+            pallet,
+            entry,
+            key,
+            input_params
+        );
+
+        let entry_meta =
+            T::pallet_storage_entry_metadata(&pallet, &entry)?.ok_or(Error::MemberNotFound)?;
+        let default_byte_getter = (entry_meta.modifier == StorageEntryModifier::Default)
+            .then(|| entry_meta.default.to_left().ok_or(Error::InvalidMetadata))
+            .transpose()?;
+
+        let base_gas_cost = Self::base_gas_cost(&pallet, &entry, &key, &entry_meta.ty)?;
+        if let Some(target_gas) = target_gas {
+            if target_gas < base_gas_cost {
+                return Err(ExitError::OutOfGas);
+            }
+        }
+
+        let storage_key = key
+            .to_pallet_entry_storage_key(&pallet, &entry, &entry_meta.ty)
+            .ok_or(Error::InvalidKey)?;
+        let params = input_params.try_into()?;
+
+        RawStorageReader::<T>::read(&storage_key, params)
+            .and_then(|value| value.or_default(&params, default_byte_getter))
+            .and_then(|output| {
+                let total_gas_cost = base_gas_cost.saturating_add(Self::output_gas_cost(output.len()));
+                if let Some(target_gas) = target_gas {
+                    if target_gas < total_gas_cost {
+                        return Err(ExitError::OutOfGas);
+                    }
+                }
+
+                Ok((output, total_gas_cost))
+            })
+            .map(|(output, cost)| PrecompileOutput {
+                cost,
+                output: output.encode_to_bytes(),
+                exit_status: ExitSucceed::Returned,
+                logs: Default::default(),
+            })
+    }
+}
+
+impl<T: pallet_evm::Config + PalletStorageMetadataProvider> MetaStorageReader<T> {
+    fn base_gas_cost(
+        pallet: &str,
+        entry: &str,
+        key: &Key,
+        entry_type: &StorageEntryType,
+    ) -> Result<u64, ExitError> {
+        let key_hashing_gas_cost = key
+            .full_hashing_weight(pallet, entry, entry_type)
+            .ok_or(Error::InvalidKey)?;
+
+        Ok(T::GasWeightMapping::weight_to_gas(key_hashing_gas_cost)
+            .saturating_add(RawStorageReader::<T>::base_gas_cost()))
+    }
+
+    fn output_gas_cost(output_len: usize) -> u64 {
+        RawStorageReader::<T>::output_gas_cost(output_len)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Error {
+    MemberNotFound,
+    InvalidMetadata,
+    InvalidKey,
+    Decoding(codec::Error),
+}
+
+impl From<Error> for ExitError {
+    fn from(err: Error) -> Self {
+        let msg = match err {
+            Error::InvalidMetadata => "Invalid metadata",
+            Error::MemberNotFound => "Member not found",
+            Error::InvalidKey => "Invalid key",
+            Error::Decoding(_) => "Failed to decode input",
+        };
+
+        ExitError::Other(Cow::Borrowed(msg))
+    }
+}

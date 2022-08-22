@@ -11,6 +11,7 @@ members = [
 	"frame/evm/precompile/blake2",
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
+	"frame/evm/precompile/storage-reader",
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",

@@ -1,12 +1,16 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, decl_module, decl_storage,
+    pallet_prelude::Weight,
+    parameter_types,
     sp_runtime::{
-        generic,
+        self, generic,
         traits::{BlakeTwo256, IdentityLookup},
-    },
+        AccountId32,
+    }, weights::constants::RocksDbWeight,
 };
-use frame_system::Config;
+use frame_system::{Config, RawOrigin};
+use pallet_evm::EnsureAddressOrigin;
 use sp_core::{ecdsa::Signature, hexdisplay::AsBytesRef, H160, H256};
 use sp_std::prelude::*;
 
@@ -41,8 +45,6 @@ impl Decode for RawBytes {
 
         Ok(Self(Bytes(data)))
     }
-
-    // const TYPE_INFO: TypeInfo = TypeInfo::Unknown;
 }
 
 impl Default for Bytes {
@@ -90,16 +92,13 @@ pub mod test_storage {
     }
 }
 
+pub type AccountId = AccountId32;
+
 /// The address format for describing accounts.
-pub type Address = u32;
+pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<u32, BlakeTwo256>;
-
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-/// A Block signed with a Justification
-pub type SignedBlock = generic::SignedBlock<Block>;
-/// BlockId type as expected by this runtime.
-pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
     frame_system::CheckSpecVersion<Runtime>,
@@ -111,8 +110,6 @@ pub type SignedExtra = (
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
-/// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<u32, Call, SignedExtra>;
 
 construct_runtime! {
     pub enum Runtime where
@@ -121,15 +118,77 @@ construct_runtime! {
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Module, Call, Config, Storage, Event<T>},
-        TestStorage: test_storage::{Module, Call, Storage}
+        Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+        Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
+        EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
+        TestStorage: test_storage::{Module, Call, Storage},
     }
+}
+
+impl pallet_timestamp::Config for Runtime {
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = ();
+    type WeightInfo = ();
+}
+
+impl pallet_balances::Config for Runtime {
+    type MaxLocks = ();
+    type Balance = u64;
+    type Event = ();
+    type DustRemoval = ();
+    type ExistentialDeposit = ();
+    type AccountStore = System;
+    type WeightInfo = ();
+}
+
+/// Ensure that the address is truncated hash of the origin. Only works if the account id is
+/// `AccountId32`.
+pub struct EnsureAddressTruncated;
+
+impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressTruncated
+where
+    OuterOrigin: Into<Result<RawOrigin<AccountId32>, OuterOrigin>> + From<RawOrigin<AccountId32>>,
+{
+    type Success = AccountId32;
+
+    fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<AccountId32, OuterOrigin> {
+        origin.into().and_then(|o| match o {
+            RawOrigin::Signed(who) if AsRef::<[u8; 32]>::as_ref(&who)[0..20] == address[0..20] => {
+                Ok(who)
+            }
+            r => Err(OuterOrigin::from(r)),
+        })
+    }
+}
+
+parameter_types! {
+    pub const ByteReadWeight: Weight = 10;
+}
+
+impl pallet_evm::Config for Runtime {
+    type FeeCalculator = ();
+    type GasWeightMapping = ();
+    type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
+    type CallOrigin = pallet_evm::EnsureAddressRoot<H160>;
+    type WithdrawOrigin = pallet_evm::EnsureAddressNever<H160>;
+    type AddressMapping = pallet_evm::IdentityAddressMapping;
+    type Currency = Balances;
+    type Event = ();
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
+    type ByteReadWeight = ByteReadWeight;
+    type Precompiles = ();
+    type ChainId = ();
+    type BlockGasLimit = ();
+    type OnChargeTransaction = ();
+    type FindAuthor = ();
 }
 
 impl frame_system::Config for Runtime {
     type BaseCallFilter = ();
     type BlockWeights = ();
     type BlockLength = ();
-    type DbWeight = ();
+    type DbWeight = RocksDbWeight;
     type Origin = Origin;
     type Index = u64;
     type BlockNumber = u64;
@@ -142,24 +201,12 @@ impl frame_system::Config for Runtime {
     type Event = ();
     type BlockHashCount = ();
     type Version = ();
-    type PalletInfo = PalletInfo1;
-    type AccountData = ();
+    type PalletInfo = PalletInfo;
+    type AccountData = pallet_balances::AccountData<u64>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
     type SS58Prefix = ();
-}
-
-pub struct PalletInfo1;
-
-impl frame_support::traits::PalletInfo for PalletInfo1 {
-    fn index<P: 'static>() -> Option<usize> {
-        return Some(0);
-    }
-
-    fn name<P: 'static>() -> Option<&'static str> {
-        return Some("TestName");
-    }
 }
 
 crate::impl_pallet_storage_metadata_provider!(

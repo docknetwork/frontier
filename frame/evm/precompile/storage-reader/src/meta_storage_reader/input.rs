@@ -1,19 +1,19 @@
 use codec::{Decode, Encode};
 use sp_std::borrow::Cow;
 
-use crate::raw_storage_reader::input::InputParams;
+pub use crate::raw_storage_reader::input::InputParams;
 
 use super::key::Key;
 
 #[derive(Debug, Encode, Decode, Clone)]
-pub struct Input<'a> {
+pub struct MetaStorageReaderInput<'a> {
     pub pallet: Cow<'a, str>,
     pub entry: Cow<'a, str>,
     pub key: Key,
     pub params: InputParams,
 }
 
-impl<'a> Input<'a> {
+impl<'a> MetaStorageReaderInput<'a> {
     pub fn new(
         pallet: impl Into<Cow<'a, str>>,
         entry: impl Into<Cow<'a, str>>,

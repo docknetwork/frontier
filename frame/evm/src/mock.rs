@@ -21,7 +21,7 @@ use crate::{Config, EnsureAddressNever, EnsureAddressRoot,
 	FeeCalculator, Event, IdentityAddressMapping};
 use frame_support::{
 	impl_outer_origin, parameter_types, ConsensusEngineId,
-	traits::FindAuthor
+	traits::FindAuthor, pallet_prelude::Weight
 };
 use sp_runtime::{
 	generic,
@@ -122,6 +122,10 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 type System = frame_system::Module<Test>;
 type Balances = pallet_balances::Module<Test>;
 
+parameter_types! {
+	pub const ByteReadWeight: Weight = 10;
+}
+
 impl Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = ();
@@ -132,6 +136,7 @@ impl Config for Test {
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 	type Runner = crate::runner::stack::Runner<Self>;
+	type ByteReadWeight = ByteReadWeight;
 
 	type Event = Event<Test>;
 	type Precompiles = ();

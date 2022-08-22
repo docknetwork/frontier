@@ -1,6 +1,7 @@
 use core::{
     convert::{TryFrom, TryInto},
     num::NonZeroU32,
+    ops::Range,
 };
 
 use codec::{Decode, Encode};
@@ -9,15 +10,16 @@ use sp_std::borrow::Cow;
 
 use super::input::InputParams;
 
-pub const MAX_BYTES_LEN: u32 = 0x100000;
+pub const MAX_BYTES_LEN: u32 = 0x3e800;
 
 #[derive(Debug, Encode, Decode, Clone, Default, Copy)]
 pub struct Params {
-    pub offset: Option<NonZeroU32>,
-    pub len: Option<u32>,
+    pub(super) offset: Option<NonZeroU32>,
+    pub(super) len: Option<u32>,
 }
 
 impl Params {
+    /// Constructs new `Params`, validates provided length.
     pub fn new(
         offset: impl Into<Option<u32>>,
         len: impl Into<Option<u32>>,
@@ -33,7 +35,9 @@ impl Params {
         })
     }
 
-    pub fn lower_upper(&self) -> Result<(usize, Option<usize>), ParamsError> {
+    /// Attempts to convert given params to the range bounds.
+    /// Result range is always valid, and has upper/lower bound less or equal to max.
+    pub fn to_range(&self, max: usize) -> Result<Range<usize>, ParamsError> {
         let lower: usize = self
             .offset
             .map(NonZeroU32::get)
@@ -45,18 +49,19 @@ impl Params {
             .map(|len| {
                 let len: usize = len.try_into().map_err(|_| ParamsError::Overflow)?;
 
-                len.checked_add(lower)
-                    .ok_or(ParamsError::OffsetPlusLengthOverflow)
+                Ok(len.checked_add(lower))
             })
-            .transpose()?;
+            .transpose()?
+            .flatten()
+            .unwrap_or(max)
+            .min(max);
 
-        Ok((lower, upper))
+        Ok(lower.min(upper)..upper)
     }
 }
 
 pub enum ParamsError {
     LengthExceedsLimit,
-    OffsetPlusLengthOverflow,
     Overflow,
 }
 
@@ -66,9 +71,6 @@ impl From<ParamsError> for ExitError {
             ParamsError::Overflow => ExitError::Other(Cow::Borrowed("Params overflow")),
             ParamsError::LengthExceedsLimit => {
                 ExitError::Other(Cow::Borrowed("Length exceeds limit"))
-            }
-            ParamsError::OffsetPlusLengthOverflow => {
-                ExitError::Other(Cow::Borrowed("offset + length overflow"))
             }
         }
     }
