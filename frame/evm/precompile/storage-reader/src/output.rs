@@ -42,23 +42,27 @@ impl RawStorageValue {
         }
     }
 
-    pub fn or_default(
-        self,
-        params: &Params,
-        byte_getter: Option<&DefaultByteGetter>,
-    ) -> Result<Self, ExitError> {
+    pub fn or_default(self, byte_getter: Option<&DefaultByteGetter>) -> Self {
         match self {
             Self::None => byte_getter
                 .map(|byte_getter| byte_getter.0.default_byte())
-                .map(|default_bytes| {
-                    let range = params.to_range(default_bytes.len())?;
-                    let sliced_value = default_bytes[range].to_vec();
+                .into(),
+            item @ Self::Item(_) => item,
+        }
+    }
 
-                    Ok(sliced_value)
-                })
-                .transpose()
-                .map(Into::into),
-            item @ Self::Item(_) => Ok(item),
+    pub fn apply_params(self, params: &Params) -> Result<Self, ExitError> {
+        match self {
+            Self::Item(bytes) => {
+                let item = if let Some(range) = params.to_range(bytes.len()) {
+                    bytes[range].to_vec()
+                } else {
+                    bytes
+                };
+
+                Ok(Self::Item(item))
+            }
+            Self::None => Ok(Self::None),
         }
     }
 }

@@ -2,9 +2,9 @@
 
 pub use frame_metadata;
 
+pub mod meta_storage_reader;
 mod mock;
 pub mod output;
-pub mod meta_storage_reader;
 pub mod raw_storage_reader;
 
 pub use meta_storage_reader::MetaStorageReader;

@@ -17,7 +17,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 
 	const TEST_CONTRACT_BYTECODE = PalletStorageAccessor.bytecode;
 	const TEST_CONTRACT_ABI = PalletStorageAccessor.abi as AbiItem[];
-	let contractAddress; // = "0xc2bf5f29a4384b1ab0c063e1c666f02121b6084a"; // Those test are ordered. In general this should be avoided, but due to the time it takes	// to spin up a frontier node, it saves a lot of time.
+	let contractAddress;
 
 	before("create the contract", async function () {
 		this.timeout(15000);

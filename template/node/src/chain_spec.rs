@@ -128,8 +128,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 
 macro_rules! h256 {
     ($val: expr) => {{
-        let mut bytes: [u8; 32] = sp_core::U256::from($val).into();
-		// bytes.reverse();
+        let bytes: [u8; 32] = sp_core::U256::from($val).into();
         sp_core::H256(bytes)
     }};
 }

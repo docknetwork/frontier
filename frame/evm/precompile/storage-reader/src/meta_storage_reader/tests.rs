@@ -9,8 +9,8 @@ use sp_std::prelude::*;
 use crate::raw_storage_reader::input::InputParams;
 
 use super::key::*;
-use crate::mock::{test_storage::*, *};
 use super::*;
+use crate::mock::{test_storage::*, *};
 
 pub fn ext() -> sp_io::TestExternalities {
     let t = frame_system::GenesisConfig::default()
@@ -83,7 +83,8 @@ fn invalid_input() {
             Err::<Option<Bytes>, _>(ExitError::from(super::Error::MemberNotFound).into())
         );
 
-        let input = MetaStorageReaderInput::new("TestStorage", "MapDefault", NoKey, InputParams::None);
+        let input =
+            MetaStorageReaderInput::new("TestStorage", "MapDefault", NoKey, InputParams::None);
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
             Err::<Option<Bytes>, _>(ExitError::from(super::Error::InvalidKey).into())
@@ -105,7 +106,8 @@ fn invalid_input() {
 #[test]
 fn entity_access() {
     ext().execute_with(|| {
-        let input = MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, InputParams::None);
+        let input =
+            MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, InputParams::None);
 
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -336,28 +338,51 @@ fn double_map_access() {
 #[test]
 fn costs() {
     ext().execute_with(|| {
-        let input = MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, InputParams::None);
+        let input =
+            MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, InputParams::None);
 
         let res =
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX)
                 .unwrap();
-        let entry_meta = <Runtime as PalletStorageMetadataProvider>::pallet_storage_entry_metadata("TestStorage", "SingleDefault").unwrap().unwrap();
+        let entry_meta = <Runtime as PalletStorageMetadataProvider>::pallet_storage_entry_metadata(
+            "TestStorage",
+            "SingleDefault",
+        )
+        .unwrap()
+        .unwrap();
         assert_eq!(
             res.cost,
-            MetaStorageReader::<Runtime>::base_gas_cost("TestStorage", "SingleDefault", &NoKey.into(), &entry_meta.ty).unwrap() + MetaStorageReader::<Runtime>::output_gas_cost(res.output.len() - 1)
+            MetaStorageReader::<Runtime>::base_gas_cost(
+                "TestStorage",
+                "SingleDefault",
+                &NoKey.into(),
+                &entry_meta.ty
+            )
+            .unwrap()
+                + MetaStorageReader::<Runtime>::output_gas_cost(res.output.len() - 1)
         );
-        assert!(
-            res.cost > RawStorageReader::<Runtime>::base_gas_cost()
-        );
+        assert!(res.cost > RawStorageReader::<Runtime>::base_gas_cost());
 
-        let input = MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, InputParams::Len(100));
+        let input = MetaStorageReaderInput::new(
+            "TestStorage",
+            "SingleDefault",
+            NoKey,
+            InputParams::Len(100),
+        );
 
         let res =
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX)
                 .unwrap();
         assert_eq!(
             res.cost,
-            MetaStorageReader::<Runtime>::base_gas_cost("TestStorage", "SingleDefault", &NoKey.into(), &entry_meta.ty).unwrap() + MetaStorageReader::<Runtime>::output_gas_cost(res.output.len() - 1)
+            MetaStorageReader::<Runtime>::base_gas_cost(
+                "TestStorage",
+                "SingleDefault",
+                &NoKey.into(),
+                &entry_meta.ty
+            )
+            .unwrap()
+                + MetaStorageReader::<Runtime>::output_gas_cost(102)
         );
     });
 }

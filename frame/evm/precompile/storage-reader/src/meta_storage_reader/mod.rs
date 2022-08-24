@@ -1,4 +1,4 @@
-use core::{convert::TryInto, marker::PhantomData};
+use core::marker::PhantomData;
 
 use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
 use fp_evm::Precompile;
@@ -6,9 +6,9 @@ use frame_support::log::debug;
 use pallet_evm::GasWeightMapping;
 use sp_std::{borrow::Cow, prelude::*};
 
-use input::MetaStorageReaderInput;
 use codec::Decode;
 use frame_metadata::{StorageEntryModifier, StorageEntryType};
+use input::MetaStorageReaderInput;
 
 use crate::raw_storage_reader::RawStorageReader;
 pub use pallet_storage_metadata_provider::*;
@@ -57,7 +57,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
             pallet,
             entry,
             key,
-            params: input_params,
+            params,
         } = MetaStorageReaderInput::decode(&mut input).map_err(Error::Decoding)?;
 
         debug!(
@@ -65,7 +65,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
             pallet,
             entry,
             key,
-            input_params
+            params
         );
 
         let entry_meta =
@@ -84,26 +84,25 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
         let storage_key = key
             .to_pallet_entry_storage_key(&pallet, &entry, &entry_meta.ty)
             .ok_or(Error::InvalidKey)?;
-        let params = input_params.try_into()?;
 
-        RawStorageReader::<T>::read(&storage_key, params)
-            .and_then(|value| value.or_default(&params, default_byte_getter))
-            .and_then(|output| {
-                let total_gas_cost = base_gas_cost.saturating_add(Self::output_gas_cost(output.len()));
-                if let Some(target_gas) = target_gas {
-                    if target_gas < total_gas_cost {
-                        return Err(ExitError::OutOfGas);
-                    }
-                }
+        let raw_output = RawStorageReader::<T>::read(&storage_key)
+            .map(|value| value.or_default(default_byte_getter))?;
 
-                Ok((output, total_gas_cost))
-            })
-            .map(|(output, cost)| PrecompileOutput {
-                cost,
-                output: output.encode_to_bytes(),
-                exit_status: ExitSucceed::Returned,
-                logs: Default::default(),
-            })
+        let total_gas_cost = base_gas_cost.saturating_add(Self::output_gas_cost(raw_output.len()));
+        if let Some(target_gas) = target_gas {
+            if target_gas < total_gas_cost {
+                return Err(ExitError::OutOfGas);
+            }
+        }
+
+        let output = raw_output.apply_params(&params.into())?;
+
+        Ok(PrecompileOutput {
+            cost: total_gas_cost,
+            output: output.encode_to_bytes(),
+            exit_status: ExitSucceed::Returned,
+            logs: Default::default(),
+        })
     }
 }
 

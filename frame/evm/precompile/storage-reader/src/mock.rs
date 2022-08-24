@@ -7,7 +7,8 @@ use frame_support::{
         self, generic,
         traits::{BlakeTwo256, IdentityLookup},
         AccountId32,
-    }, weights::constants::RocksDbWeight,
+    },
+    weights::constants::RocksDbWeight,
 };
 use frame_system::{Config, RawOrigin};
 use pallet_evm::EnsureAddressOrigin;

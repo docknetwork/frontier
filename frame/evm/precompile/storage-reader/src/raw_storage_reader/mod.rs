@@ -1,6 +1,4 @@
-use core::convert::TryInto;
 use core::marker::PhantomData;
-use core::num::NonZeroU32;
 
 use codec::Decode;
 use evm::executor::PrecompileOutput;
@@ -51,61 +49,31 @@ impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
             }
         }
 
-        Self::read(&key, params.try_into()?)
-            .and_then(|output| {
-                let total_gas_cost = base_gas_cost + Self::output_gas_cost(output.len());
-                if let Some(target_gas) = target_gas {
-                    if target_gas < total_gas_cost {
-                        return Err(ExitError::OutOfGas);
-                    }
-                }
+        let raw_output = Self::read(&key)?;
 
-                Ok((output, total_gas_cost))
-            })
-            .map(|(output, cost)| PrecompileOutput {
-                exit_status: ExitSucceed::Returned,
-                cost,
-                output: output.encode_to_bytes(),
-                logs: Default::default(),
-            })
+        let total_gas_cost = base_gas_cost + Self::output_gas_cost(raw_output.len());
+        if let Some(target_gas) = target_gas {
+            if target_gas < total_gas_cost {
+                return Err(ExitError::OutOfGas);
+            }
+        }
+
+        let output = raw_output.apply_params(&params.into())?;
+
+        Ok(PrecompileOutput {
+            exit_status: ExitSucceed::Returned,
+            cost: total_gas_cost,
+            output: output.encode_to_bytes(),
+            logs: Default::default(),
+        })
     }
 }
 
 impl<T: pallet_evm::Config> RawStorageReader<T> {
-    pub(super) fn read(
-        raw_key: &[u8],
-        Params { offset, len }: Params,
-    ) -> Result<RawStorageValue, ExitError> {
-        debug!(
-            "`RawStorageReader` read: {:?} with offset = {:?}, len = {:?}",
-            raw_key, offset, len
-        );
+    pub(super) fn read(raw_key: &[u8]) -> Result<RawStorageValue, ExitError> {
+        debug!("`RawStorageReader` read: {:?}", raw_key);
 
-        let value = if let Some(len) = len {
-            let mut bytes = vec![0; len as usize];
-            sp_io::storage::read(
-                &raw_key,
-                &mut bytes,
-                offset.map(NonZeroU32::get).unwrap_or_default(),
-            )
-            .map(|bytes_read| {
-                let bytes_read = bytes_read as usize;
-                if bytes_read < bytes.len() {
-                    bytes.truncate(bytes_read);
-                }
-
-                bytes
-            })
-        } else {
-            let bytes = sp_io::storage::get(&raw_key);
-
-            offset
-                .zip(bytes.as_ref())
-                .map(|(offset, bytes)| bytes[bytes.len().min(offset.get() as usize)..].to_vec())
-                .or(bytes)
-        };
-
-        Ok(value.into())
+        Ok(sp_io::storage::get(&raw_key).into())
     }
 
     pub(super) fn base_gas_cost() -> u64 {
