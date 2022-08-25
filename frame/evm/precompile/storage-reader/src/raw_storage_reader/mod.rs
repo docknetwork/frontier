@@ -53,7 +53,7 @@ impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
         let total_gas_cost = base_gas_cost.saturating_add(Self::output_gas_cost(raw_output.len()));
         crate::ensure_enough_gas!(target_gas >= total_gas_cost);
 
-        let output = raw_output.apply_params(&params.into());
+        let output = raw_output.apply_params(&params);
 
         Ok(PrecompileOutput {
             exit_status: ExitSucceed::Returned,
@@ -65,6 +65,7 @@ impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
 }
 
 impl<T: pallet_evm::Config> RawStorageReader<T> {
+    /// Reads the value from the storage using supplied raw key.
     pub(super) fn read(raw_key: &[u8]) -> RawStorageValue {
         debug!("`RawStorageReader` read: {:?}", raw_key);
 
@@ -83,14 +84,12 @@ impl<T: pallet_evm::Config> RawStorageReader<T> {
 }
 
 pub enum Error {
-    InvalidParams,
     Decoding(codec::Error),
 }
 
 impl From<Error> for ExitError {
     fn from(err: Error) -> Self {
         match err {
-            Error::InvalidParams => ExitError::Other(Cow::Borrowed("Invalid params")),
             Error::Decoding(_) => ExitError::Other(Cow::Borrowed("Failed to decode")),
         }
     }

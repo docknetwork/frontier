@@ -1,9 +1,8 @@
 use codec::{Decode, Encode};
 use sp_std::borrow::Cow;
 
-pub use crate::common::params::Params;
-
 use super::key::Key;
+pub use crate::common::params::Params;
 
 /// Input for `MetaStorageReader` precompile.
 #[derive(Debug, Encode, Decode, Clone)]

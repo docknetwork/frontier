@@ -3,6 +3,7 @@ use evm::ExitError;
 use frame_metadata::{StorageEntryMetadata, StorageMetadata};
 use sp_std::borrow::Cow;
 
+/// Metadata is invalid (i.e. encoded not correctly).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct InvalidMetadata;
 

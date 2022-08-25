@@ -25,8 +25,8 @@ mod tests;
 mod utils;
 mod weights;
 
-/// Precompile allowing to read any pallet storage member data using provided key encoded accoding to the corresponding metadata.
-/// Unlike `RawStorageReader`, default members will be instantiated in case of absence.
+/// Precompile allows reading any pallet storage member data using provided key hashed according to the corresponding metadata.
+/// Unlike with `RawStorageReader`, default members will be instantiated in case of absence.
 ///
 /// Output:
 /// - 1 byte representing presence (1) or absence (0) of the value
@@ -91,7 +91,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
         let total_gas_cost = base_gas_cost.saturating_add(Self::output_gas_cost(raw_output.len()));
         crate::ensure_enough_gas!(target_gas >= total_gas_cost);
 
-        let output = raw_output.apply_params(&params.into());
+        let output = raw_output.apply_params(&params);
 
         Ok(PrecompileOutput {
             cost: total_gas_cost,
@@ -109,11 +109,11 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> MetaStorageReader<T>
         key: &Key,
         entry_type: &StorageEntryType,
     ) -> Result<u64, ExitError> {
-        let key_hashing_gas_cost = key
+        let key_hashing_weight = key
             .full_hashing_weight(pallet, entry, entry_type)
             .ok_or(Error::InvalidKey)?;
 
-        Ok(T::GasWeightMapping::weight_to_gas(key_hashing_gas_cost)
+        Ok(T::GasWeightMapping::weight_to_gas(key_hashing_weight)
             .saturating_add(RawStorageReader::<T>::base_gas_cost()))
     }
 

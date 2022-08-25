@@ -145,9 +145,11 @@ impl HashableKey for DoubleMapKey {
         let Self(key1, key2) = self;
 
         match entry_type {
-            StorageEntryType::DoubleMap { hasher, .. } => {
-                Some(hasher_weight(hasher, key1.len()) + hasher_weight(hasher, key2.len()))
-            }
+            StorageEntryType::DoubleMap {
+                hasher,
+                key2_hasher,
+                ..
+            } => Some(hasher_weight(hasher, key1.len()) + hasher_weight(key2_hasher, key2.len())),
             _ => None,
         }
     }
