@@ -1,9 +1,9 @@
-use evm::ExitError;
 use frame_metadata::DefaultByteGetter;
 use sp_std::prelude::*;
 
-use crate::raw_storage_reader::Params;
+use super::params::Params;
 
+/// Represents raw value read from the storage.
 #[derive(Debug, Clone)]
 pub enum RawStorageValue {
     None,
@@ -11,6 +11,7 @@ pub enum RawStorageValue {
 }
 
 impl RawStorageValue {
+    /// Returns underlying value bytes length.
     pub fn len(&self) -> usize {
         match self {
             Self::None => 0,
@@ -18,6 +19,7 @@ impl RawStorageValue {
         }
     }
 
+    /// Attempts to convert `Self` into item.
     pub fn into_item(self) -> Option<Vec<u8>> {
         match self {
             Self::None => None,
@@ -25,6 +27,7 @@ impl RawStorageValue {
         }
     }
 
+    /// Encodes `Self` as bytes.
     pub fn encode_to_bytes(&self) -> Vec<u8> {
         let mut output = vec![0; self.len() + 1];
         if let RawStorageValue::Item(bytes) = self {
@@ -35,6 +38,7 @@ impl RawStorageValue {
         output
     }
 
+    /// Decodes `Self` from bytes.
     pub fn decode_from_bytes(bytes: &[u8]) -> Self {
         match bytes.get(0) {
             Some(1) => Self::Item(bytes[1..].to_vec()),
@@ -42,6 +46,7 @@ impl RawStorageValue {
         }
     }
 
+    /// If value is absent, attempts to replace it with default value provided by supplied getter.
     pub fn or_default(self, byte_getter: Option<&DefaultByteGetter>) -> Self {
         match self {
             Self::None => byte_getter
@@ -51,7 +56,8 @@ impl RawStorageValue {
         }
     }
 
-    pub fn apply_params(self, params: &Params) -> Result<Self, ExitError> {
+    /// Applies offset and length params to the value.
+    pub fn apply_params(self, params: &Params) -> Self {
         match self {
             Self::Item(bytes) => {
                 let item = if let Some(range) = params.to_range(bytes.len()) {
@@ -60,9 +66,9 @@ impl RawStorageValue {
                     bytes
                 };
 
-                Ok(Self::Item(item))
+                Self::Item(item)
             }
-            Self::None => Ok(Self::None),
+            Self::None => Self::None,
         }
     }
 }

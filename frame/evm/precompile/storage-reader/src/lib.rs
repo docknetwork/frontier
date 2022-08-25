@@ -2,9 +2,10 @@
 
 pub use frame_metadata;
 
+pub mod common;
+pub use common::{output, params};
 pub mod meta_storage_reader;
 mod mock;
-pub mod output;
 pub mod raw_storage_reader;
 
 pub use meta_storage_reader::MetaStorageReader;

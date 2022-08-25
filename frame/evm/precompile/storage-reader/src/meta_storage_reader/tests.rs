@@ -2,11 +2,11 @@ use codec::{Decode, Encode};
 use fp_evm::Precompile;
 use frame_support::{StorageDoubleMap, StorageMap, StorageValue};
 
-use crate::output::RawStorageValue;
+use crate::common::output::RawStorageValue;
 use sp_core::{H160, U256};
 use sp_std::prelude::*;
 
-use crate::raw_storage_reader::input::InputParams;
+use crate::common::params::Params;
 
 use super::key::*;
 use super::*;
@@ -71,20 +71,19 @@ static DUMMY_CTX: &'static evm::Context = &evm::Context {
 #[test]
 fn invalid_input() {
     ext().execute_with(|| {
-        let input = MetaStorageReaderInput::new("Pallet", "Version", NoKey, InputParams::None);
+        let input = MetaStorageReaderInput::new("Pallet", "Version", NoKey, Params::None);
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
             Err::<Option<Bytes>, _>(ExitError::from(super::Error::MemberNotFound).into())
         );
 
-        let input = MetaStorageReaderInput::new("TestStorage", "Abcde", NoKey, InputParams::None);
+        let input = MetaStorageReaderInput::new("TestStorage", "Abcde", NoKey, Params::None);
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
             Err::<Option<Bytes>, _>(ExitError::from(super::Error::MemberNotFound).into())
         );
 
-        let input =
-            MetaStorageReaderInput::new("TestStorage", "MapDefault", NoKey, InputParams::None);
+        let input = MetaStorageReaderInput::new("TestStorage", "MapDefault", NoKey, Params::None);
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
             Err::<Option<Bytes>, _>(ExitError::from(super::Error::InvalidKey).into())
@@ -94,7 +93,7 @@ fn invalid_input() {
             "TestStorage",
             "DoubleMap",
             MapKey::new(Bytes::default()),
-            InputParams::None,
+            Params::None,
         );
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -107,7 +106,7 @@ fn invalid_input() {
 fn entity_access() {
     ext().execute_with(|| {
         let input =
-            MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, InputParams::None);
+            MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, Params::None);
 
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -119,12 +118,8 @@ fn entity_access() {
 #[test]
 fn large_entity_access() {
     ext().execute_with(|| {
-        let input = MetaStorageReaderInput::new(
-            "TestStorage",
-            "LargeSingleDefault",
-            NoKey,
-            InputParams::None,
-        );
+        let input =
+            MetaStorageReaderInput::new("TestStorage", "LargeSingleDefault", NoKey, Params::None);
 
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -195,7 +190,7 @@ fn map_access() {
                     "TestStorage",
                     name,
                     MapKey::new(Bytes::with_len(10)),
-                    InputParams::None,
+                    Params::None,
                 );
                 assert_returned_value!(
                     MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -241,7 +236,7 @@ fn map_access_with_params() {
                     "TestStorage",
                     name,
                     MapKey::new(Bytes::with_len(10)),
-                    InputParams::Len(4),
+                    Params::Len(4),
                 );
                 assert_returned_value!(
                     MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -252,7 +247,7 @@ fn map_access_with_params() {
                     "TestStorage",
                     name,
                     MapKey::new(Bytes::with_len(10)),
-                    InputParams::Offset(10),
+                    Params::Offset(10),
                 );
                 assert_returned_value!(
                     MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -263,7 +258,7 @@ fn map_access_with_params() {
                     "TestStorage",
                     name,
                     MapKey::new(Bytes::with_len(10)),
-                    InputParams::OffsetAndLen { offset: 10, len: 50 },
+                    Params::OffsetAndLen { offset: 10, len: 50 },
                 );
                 assert_returned_value!(
                     MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -287,7 +282,7 @@ fn double_map_access() {
             "TestStorage",
             "DoubleMap",
             DoubleMapKey::new(Bytes::with_len(10), Bytes::with_len(20)),
-            InputParams::None,
+            Params::None,
         );
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
@@ -325,7 +320,7 @@ fn double_map_access() {
             "TestStorage",
             "DoubleMapDefault",
             DoubleMapKey::new(Bytes::with_len(10), Bytes::with_len(20)),
-            InputParams::None,
+            Params::None,
         );
 
         assert_returned_value!(
@@ -339,7 +334,7 @@ fn double_map_access() {
 fn costs() {
     ext().execute_with(|| {
         let input =
-            MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, InputParams::None);
+            MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, Params::None);
 
         let res =
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX)
@@ -363,12 +358,8 @@ fn costs() {
         );
         assert!(res.cost > RawStorageReader::<Runtime>::base_gas_cost());
 
-        let input = MetaStorageReaderInput::new(
-            "TestStorage",
-            "SingleDefault",
-            NoKey,
-            InputParams::Len(100),
-        );
+        let input =
+            MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, Params::Len(100));
 
         let res =
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX)

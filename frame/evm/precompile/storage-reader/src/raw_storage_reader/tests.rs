@@ -5,7 +5,7 @@ use frame_support::StorageMap;
 use sp_core::{H160, U256};
 use sp_std::prelude::*;
 
-use crate::raw_storage_reader::input::InputParams;
+use crate::common::params::Params;
 
 use super::*;
 use crate::mock::{test_storage::*, *};
@@ -36,7 +36,7 @@ fn raw_access() {
 
         let input = RawStorageReaderInput {
             key: raw_key,
-            params: InputParams::None,
+            params: Params::None,
         };
         let out = RawStorageReader::<Runtime>::execute(
             &input.encode(),
@@ -55,7 +55,7 @@ fn raw_access() {
 
         let input = RawStorageReaderInput {
             key: non_existent_key,
-            params: InputParams::None,
+            params: Params::None,
         };
         let out = RawStorageReader::<Runtime>::execute(
             &input.encode(),

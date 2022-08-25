@@ -1,16 +1,21 @@
 use codec::{Decode, Encode};
 use sp_std::borrow::Cow;
 
-pub use crate::raw_storage_reader::input::InputParams;
+pub use crate::common::params::Params;
 
 use super::key::Key;
 
+/// Input for `MetaStorageReader` precompile.
 #[derive(Debug, Encode, Decode, Clone)]
 pub struct MetaStorageReaderInput<'a> {
+    /// Target pallet name (for ex. `System`)
     pub pallet: Cow<'a, str>,
+    /// Target pallet storage entry (for ex. `Now`)
     pub entry: Cow<'a, str>,
+    /// Key used to access storage entry member.
     pub key: Key,
-    pub params: InputParams,
+    /// Additional params (offset and length).
+    pub params: Params,
 }
 
 impl<'a> MetaStorageReaderInput<'a> {
@@ -18,7 +23,7 @@ impl<'a> MetaStorageReaderInput<'a> {
         pallet: impl Into<Cow<'a, str>>,
         entry: impl Into<Cow<'a, str>>,
         key: impl Into<Key>,
-        params: impl Into<InputParams>,
+        params: impl Into<Params>,
     ) -> Self {
         Self {
             pallet: pallet.into(),

@@ -27,6 +27,11 @@ mod weights;
 
 /// Precompile allowing to read any pallet storage member data using provided key encoded accoding to the corresponding metadata.
 /// Unlike `RawStorageReader`, default members will be instantiated in case of absence.
+///
+/// Output:
+/// - 1 byte representing presence (1) or absence (0) of the value
+/// - raw value bytes (with applied offset and length)
+///
 /// Input:
 /// - compact encoded length of the pallet name (UTF-8)
 /// - pallet name (UTF-8)
@@ -38,7 +43,7 @@ mod weights;
 ///   - compact encoded length of the unerlying key bytes followed by bytes for MapKey
 ///   - two compact encoded lengths of the unerlying key bytes followed by bytes for DoubleMapKey
 /// - byte representing params: 0 - no additional params, 1 - offset, 2 - length, 3 - offset and length
-/// - corresponding compact encoded offset, length, or offset followed by length
+/// - corresponding compact encoded offset, length or offset followed by length
 #[derive(Default, Debug)]
 pub struct MetaStorageReader<T>(PhantomData<T>);
 
@@ -75,27 +80,18 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
             .transpose()?;
 
         let base_gas_cost = Self::base_gas_cost(&pallet, &entry, &key, &entry_meta.ty)?;
-        if let Some(target_gas) = target_gas {
-            if target_gas < base_gas_cost {
-                return Err(ExitError::OutOfGas);
-            }
-        }
+        crate::ensure_enough_gas!(target_gas >= base_gas_cost);
 
         let storage_key = key
             .to_pallet_entry_storage_key(&pallet, &entry, &entry_meta.ty)
             .ok_or(Error::InvalidKey)?;
 
-        let raw_output = RawStorageReader::<T>::read(&storage_key)
-            .map(|value| value.or_default(default_byte_getter))?;
+        let raw_output = RawStorageReader::<T>::read(&storage_key).or_default(default_byte_getter);
 
         let total_gas_cost = base_gas_cost.saturating_add(Self::output_gas_cost(raw_output.len()));
-        if let Some(target_gas) = target_gas {
-            if target_gas < total_gas_cost {
-                return Err(ExitError::OutOfGas);
-            }
-        }
+        crate::ensure_enough_gas!(target_gas >= total_gas_cost);
 
-        let output = raw_output.apply_params(&params.into())?;
+        let output = raw_output.apply_params(&params.into());
 
         Ok(PrecompileOutput {
             cost: total_gas_cost,

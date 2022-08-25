@@ -7,25 +7,28 @@ use fp_evm::Precompile;
 use pallet_evm::GasWeightMapping;
 
 use frame_support::{log::debug, traits::Get};
-pub use params::*;
 use sp_std::{borrow::Cow, prelude::*};
 
 pub mod input;
-mod params;
 #[cfg(test)]
 mod tests;
 
-use crate::output::RawStorageValue;
+use crate::common::output::RawStorageValue;
 use input::RawStorageReaderInput;
 
 /// Precompile allowing to read any storage data using provided raw key.
 /// Unlike `MetaStorageReader`, default members won't be instantiated in case of absence.
-/// If you need this behaviour, consider using `MetaStorageReader` instead.
+/// If you need this behavior, consider using `MetaStorageReader` instead.
+///
+/// Output:
+/// - 1 byte representing presence (1) or absence (0) of the value
+/// - raw value bytes (with applied offset and length)
+///
 /// Input:
 /// - compact encoded bytes len
 /// - raw key bytes
 /// - byte representing params: 0 - no additional params, 1 - offset, 2 - length, 3 - offset and length
-/// - corresponding compact encoded offset, length, or offset followed by length
+/// - corresponding compact encoded offset, length or offset followed by length
 pub struct RawStorageReader<T: pallet_evm::Config>(PhantomData<T>);
 
 impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
@@ -43,22 +46,14 @@ impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
             RawStorageReaderInput::decode(&mut input).map_err(Error::Decoding)?;
 
         let base_gas_cost = Self::base_gas_cost();
-        if let Some(target_gas) = target_gas {
-            if target_gas < base_gas_cost {
-                return Err(ExitError::OutOfGas);
-            }
-        }
+        crate::ensure_enough_gas!(target_gas >= base_gas_cost);
 
-        let raw_output = Self::read(&key)?;
+        let raw_output = Self::read(&key);
 
-        let total_gas_cost = base_gas_cost + Self::output_gas_cost(raw_output.len());
-        if let Some(target_gas) = target_gas {
-            if target_gas < total_gas_cost {
-                return Err(ExitError::OutOfGas);
-            }
-        }
+        let total_gas_cost = base_gas_cost.saturating_add(Self::output_gas_cost(raw_output.len()));
+        crate::ensure_enough_gas!(target_gas >= total_gas_cost);
 
-        let output = raw_output.apply_params(&params.into())?;
+        let output = raw_output.apply_params(&params.into());
 
         Ok(PrecompileOutput {
             exit_status: ExitSucceed::Returned,
@@ -70,10 +65,10 @@ impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
 }
 
 impl<T: pallet_evm::Config> RawStorageReader<T> {
-    pub(super) fn read(raw_key: &[u8]) -> Result<RawStorageValue, ExitError> {
+    pub(super) fn read(raw_key: &[u8]) -> RawStorageValue {
         debug!("`RawStorageReader` read: {:?}", raw_key);
 
-        Ok(sp_io::storage::get(&raw_key).into())
+        sp_io::storage::get(&raw_key).into()
     }
 
     pub(super) fn base_gas_cost() -> u64 {
