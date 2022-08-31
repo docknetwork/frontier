@@ -16,6 +16,7 @@ use utils::*;
 
 use key::Key;
 
+#[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarks;
 pub mod input;
 pub mod key;

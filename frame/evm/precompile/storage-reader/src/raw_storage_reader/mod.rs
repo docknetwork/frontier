@@ -29,7 +29,7 @@ use input::RawStorageReaderInput;
 /// - raw key bytes
 /// - byte representing params: 0 - no additional params, 1 - offset, 2 - length, 3 - offset and length
 /// - corresponding compact encoded offset, length or offset followed by length
-pub struct RawStorageReader<T: pallet_evm::Config>(PhantomData<T>);
+pub struct RawStorageReader<T>(PhantomData<T>);
 
 impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
     fn execute(
