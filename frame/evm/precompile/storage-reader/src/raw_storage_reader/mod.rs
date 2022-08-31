@@ -7,7 +7,7 @@ use fp_evm::Precompile;
 use pallet_evm::GasWeightMapping;
 
 use frame_support::{log::debug, traits::Get};
-use sp_std::{borrow::Cow, prelude::*};
+use sp_std::borrow::Cow;
 
 pub mod input;
 #[cfg(test)]
