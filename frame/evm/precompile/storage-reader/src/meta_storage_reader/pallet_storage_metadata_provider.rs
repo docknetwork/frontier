@@ -47,7 +47,7 @@ macro_rules! impl_pallet_storage_metadata_provider {
 }
 
 impl From<InvalidMetadata> for ExitError {
-    fn from(InvalidMetadata: InvalidMetadata) -> Self {
+    fn from(_: InvalidMetadata) -> Self {
         ExitError::Other(Cow::Borrowed("Invalid metadata"))
     }
 }
