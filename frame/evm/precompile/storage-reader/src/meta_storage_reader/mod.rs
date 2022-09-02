@@ -41,8 +41,8 @@ mod weights;
 /// - byte representing key type: 0 - NoKey, 1 - MapKey, 2 - DoubleMapKey
 /// - encoded key
 ///   - nothing for NoKey
-///   - compact encoded length of the unerlying key bytes followed by bytes for MapKey
-///   - two compact encoded lengths of the unerlying key bytes followed by bytes for DoubleMapKey
+///   - compact encoded length of the underlying key bytes followed by bytes for MapKey
+///   - two compact encoded lengths of the underlying key bytes followed by bytes for DoubleMapKey
 /// - byte representing params: 0 - no additional params, 1 - offset, 2 - length, 3 - offset and length
 /// - corresponding compact encoded offset, length or offset followed by length
 #[derive(Default, Debug)]
@@ -74,8 +74,8 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
             params
         );
 
-        let entry_meta =
-            T::pallet_storage_entry_metadata(&pallet, &entry)?.ok_or(Error::PalletStorageEntryNotFound)?;
+        let entry_meta = T::pallet_storage_entry_metadata(&pallet, &entry)?
+            .ok_or(Error::PalletStorageEntryNotFound)?;
         let default_byte_getter = (entry_meta.modifier == StorageEntryModifier::Default)
             .then(|| entry_meta.default.to_left().ok_or(Error::InvalidMetadata))
             .transpose()?;

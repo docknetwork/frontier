@@ -156,7 +156,7 @@ impl HashableKey for DoubleMapKey {
 }
 
 impl From<NoKey> for Key {
-    fn from(NoKey: NoKey) -> Self {
+    fn from(_: NoKey) -> Self {
         Self::NoKey(NoKey)
     }
 }

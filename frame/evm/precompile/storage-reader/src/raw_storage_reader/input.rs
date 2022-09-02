@@ -14,13 +14,13 @@ pub struct RawStorageReaderInput {
 
 impl RawStorageReaderInput {
     /// Constructs `RawStorageReaderInput` with supplied arguments.
-    /// 
+    ///
     /// - raw key bytes used to access storage entry
     /// - optional offset and length to be applied to the value bytes
     pub fn new(key: impl Into<Vec<u8>>, params: impl Into<Params>) -> Self {
         Self {
             key: key.into(),
-            params: params.into()
+            params: params.into(),
         }
     }
 }

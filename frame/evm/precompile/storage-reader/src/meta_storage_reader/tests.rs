@@ -74,13 +74,17 @@ fn invalid_input() {
         let input = MetaStorageReaderInput::new("Pallet", "Version", NoKey, Params::None);
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
-            Err::<Option<Bytes>, _>(ExitError::from(super::Error::PalletStorageEntryNotFound).into())
+            Err::<Option<Bytes>, _>(
+                ExitError::from(super::Error::PalletStorageEntryNotFound).into()
+            )
         );
 
         let input = MetaStorageReaderInput::new("TestStorage", "Abcde", NoKey, Params::None);
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
-            Err::<Option<Bytes>, _>(ExitError::from(super::Error::PalletStorageEntryNotFound).into())
+            Err::<Option<Bytes>, _>(
+                ExitError::from(super::Error::PalletStorageEntryNotFound).into()
+            )
         );
 
         let input = MetaStorageReaderInput::new("TestStorage", "MapDefault", NoKey, Params::None);

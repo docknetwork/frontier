@@ -27,7 +27,7 @@ impl RawStorageValue {
         }
     }
 
-    /// Encodes `Self` as bytes.
+    /// Encodes `Self` as bytes. The first byte is 0 or 1 depending on `self` being `None` or `Item`.
     pub fn encode_to_bytes(&self) -> Vec<u8> {
         let mut output = vec![0; self.len() + 1];
         if let RawStorageValue::Item(bytes) = self {
