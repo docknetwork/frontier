@@ -29,6 +29,7 @@ impl<B, O> ToEither<B, O> for DecodeDifferent<B, O> {
     }
 }
 
+/// Hashes given bytes using supplied hasher.
 pub(crate) fn hash_bytes_with(bytes: &[u8], hasher: &StorageHasher) -> Vec<u8> {
     use frame_support::StorageHasher as _;
 
@@ -43,6 +44,7 @@ pub(crate) fn hash_bytes_with(bytes: &[u8], hasher: &StorageHasher) -> Vec<u8> {
     }
 }
 
+/// Returns corresponding hasher weight.
 pub(crate) fn hasher_weight(hasher: &StorageHasher, input_len: usize) -> Weight {
     let len = input_len as u32;
 

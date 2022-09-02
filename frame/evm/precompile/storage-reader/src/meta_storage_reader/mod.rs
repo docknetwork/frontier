@@ -75,7 +75,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
         );
 
         let entry_meta =
-            T::pallet_storage_entry_metadata(&pallet, &entry)?.ok_or(Error::MemberNotFound)?;
+            T::pallet_storage_entry_metadata(&pallet, &entry)?.ok_or(Error::PalletStorageEntryNotFound)?;
         let default_byte_getter = (entry_meta.modifier == StorageEntryModifier::Default)
             .then(|| entry_meta.default.to_left().ok_or(Error::InvalidMetadata))
             .transpose()?;
@@ -103,7 +103,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
     }
 }
 
-impl<T: pallet_evm::Config + PalletStorageMetadataProvider> MetaStorageReader<T> {
+impl<T: pallet_evm::Config> MetaStorageReader<T> {
     fn base_gas_cost(
         pallet: &str,
         entry: &str,
@@ -125,7 +125,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> MetaStorageReader<T>
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
-    MemberNotFound,
+    PalletStorageEntryNotFound,
     InvalidMetadata,
     InvalidKey,
     Decoding(codec::Error),
@@ -135,7 +135,7 @@ impl From<Error> for ExitError {
     fn from(err: Error) -> Self {
         let msg = match err {
             Error::InvalidMetadata => "Invalid metadata",
-            Error::MemberNotFound => "Member not found",
+            Error::PalletStorageEntryNotFound => "Pallet storage entry not found",
             Error::InvalidKey => "Invalid key",
             Error::Decoding(_) => "Failed to decode input",
         };

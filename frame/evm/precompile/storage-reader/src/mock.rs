@@ -55,7 +55,7 @@ impl Default for Bytes {
 }
 
 #[derive(Clone, Debug, Encode, Decode, Eq, Ord, PartialEq, PartialOrd)]
-pub struct LargeBytes(Bytes);
+pub struct LargeBytes(pub Bytes);
 
 impl Default for LargeBytes {
     fn default() -> Self {

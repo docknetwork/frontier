@@ -65,7 +65,7 @@ macro_rules! assert_returned_value {
 static DUMMY_CTX: &'static evm::Context = &evm::Context {
     address: H160([0; 20]),
     caller: H160([0; 20]),
-    apparent_value: U256([32; 4]),
+    apparent_value: U256([0; 4]),
 };
 
 #[test]
@@ -74,13 +74,13 @@ fn invalid_input() {
         let input = MetaStorageReaderInput::new("Pallet", "Version", NoKey, Params::None);
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
-            Err::<Option<Bytes>, _>(ExitError::from(super::Error::MemberNotFound).into())
+            Err::<Option<Bytes>, _>(ExitError::from(super::Error::PalletStorageEntryNotFound).into())
         );
 
         let input = MetaStorageReaderInput::new("TestStorage", "Abcde", NoKey, Params::None);
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
-            Err::<Option<Bytes>, _>(ExitError::from(super::Error::MemberNotFound).into())
+            Err::<Option<Bytes>, _>(ExitError::from(super::Error::PalletStorageEntryNotFound).into())
         );
 
         let input = MetaStorageReaderInput::new("TestStorage", "MapDefault", NoKey, Params::None);
@@ -112,6 +112,18 @@ fn entity_access() {
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
             Ok(Some(Bytes::default()))
         );
+
+        let input = MetaStorageReaderInput::new("TestStorage", "Single", NoKey, Params::None);
+        assert_returned_value!(
+            MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
+            Ok(None::<Bytes>)
+        );
+
+        Single::put(Bytes::with_len(123));
+        assert_returned_value!(
+            MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
+            Ok(Some(Bytes::with_len(123)))
+        );
     })
 }
 
@@ -131,11 +143,11 @@ fn large_entity_access() {
             Ok(Some(LargeBytes::default()))
         );
 
-        LargeSingleDefault::put(LargeBytes::default());
+        LargeSingleDefault::put(LargeBytes(Bytes::with_len(700)));
 
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(100_000_000), DUMMY_CTX),
-            Ok(Some(LargeBytes::default()))
+            Ok(Some(LargeBytes(Bytes::with_len(700))))
         );
     })
 }
@@ -326,6 +338,55 @@ fn double_map_access() {
         assert_returned_value!(
             MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
             Ok(Some(Bytes::default()))
+        );
+    })
+}
+
+#[test]
+fn double_map_access_with_params() {
+    ext().execute_with(|| {
+        DoubleMap::insert(
+            Bytes::with_len(10),
+            Bytes::with_len(11),
+            Bytes::from_to(100, 1000),
+        );
+        let input = MetaStorageReaderInput::new(
+            "TestStorage",
+            "DoubleMap",
+            DoubleMapKey::new(Bytes::with_len(10), Bytes::with_len(11)),
+            Params::Offset(10),
+        );
+        assert_returned_value!(
+            MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
+            Ok(Some(RawBytes(Bytes::from_to(108, 1000))))
+        );
+
+        let input = MetaStorageReaderInput::new(
+            "TestStorage",
+            "DoubleMap",
+            DoubleMapKey::new(Bytes::with_len(10), Bytes::with_len(11)),
+            Params::OffsetAndLen {
+                offset: 10,
+                len: 10,
+            },
+        );
+        assert_returned_value!(
+            MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
+            Ok(Some(RawBytes(Bytes::from_to(108, 118))))
+        );
+
+        let input = MetaStorageReaderInput::new(
+            "TestStorage",
+            "DoubleMap",
+            DoubleMapKey::new(Bytes::with_len(10), Bytes::with_len(11)),
+            Params::Len(2),
+        );
+
+        #[derive(Encode, Decode, Debug, PartialEq, Eq)]
+        struct CompactU32(#[codec(compact)] u32);
+        assert_returned_value!(
+            MetaStorageReader::<Runtime>::execute(&input.encode(), Some(30_000_000), DUMMY_CTX),
+            Ok(Some(RawBytes(Bytes(CompactU32(900).encode()))))
         );
     })
 }
