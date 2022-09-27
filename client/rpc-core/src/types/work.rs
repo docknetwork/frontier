@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ use serde::{Serialize, Serializer};
 
 /// The result of an `eth_getWork` call: it differs based on an option
 /// whether to send the block number.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct Work {
 	/// The proof-of-work hash.
 	pub pow_hash: H256,
@@ -35,9 +35,18 @@ pub struct Work {
 }
 
 impl Serialize for Work {
-	fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error> where S: Serializer {
+	fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
 		match self.number.as_ref() {
-			Some(num) => (&self.pow_hash, &self.seed_hash, &self.target, U256::from(*num)).serialize(s),
+			Some(num) => (
+				&self.pow_hash,
+				&self.seed_hash,
+				&self.target,
+				U256::from(*num),
+			)
+				.serialize(s),
 			None => (&self.pow_hash, &self.seed_hash, &self.target).serialize(s),
 		}
 	}

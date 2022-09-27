@@ -1,53 +1,37 @@
-use super::ToEither;
-use evm::ExitError;
-use frame_metadata::{StorageEntryMetadata, StorageMetadata};
-use sp_std::borrow::Cow;
-
-/// Metadata is invalid (i.e. encoded not correctly).
-#[derive(Debug, Clone, Copy, Default)]
-pub struct InvalidMetadata;
+use frame_metadata::{PalletStorageMetadata, StorageEntryMetadata};
 
 /// Provides metadata for the pallet storage.
 pub trait PalletStorageMetadataProvider {
-    /// Provides metadata for the storage of the pallet with supplied name.
-    fn pallet_storage_metadata(pallet: &str) -> Option<StorageMetadata>;
+	/// Provides metadata for the storage of the pallet with supplied name.
+	fn pallet_storage_metadata(pallet: &str) -> Option<PalletStorageMetadata>;
 
-    /// Provides metadata for the storage entry of the pallet with supplied name.
-    /// Returns an error if metadata is invalid (i.e. encoded not properly).
-    fn pallet_storage_entry_metadata(
-        pallet: &str,
-        entry: &str,
-    ) -> Result<Option<StorageEntryMetadata>, InvalidMetadata> {
-        if let Some(pallet_meta) = Self::pallet_storage_metadata(pallet) {
-            for item in *pallet_meta.entries.to_left().ok_or(InvalidMetadata)? {
-                if item.name.to_left().ok_or(InvalidMetadata)? == &entry {
-                    return Ok(Some(item.clone()));
-                }
-            }
-        }
+	/// Provides metadata for the storage entry of the pallet with supplied name.
+	/// Returns an error if metadata is invalid (i.e. encoded not properly).
+	fn pallet_storage_entry_metadata(pallet: &str, entry: &str) -> Option<StorageEntryMetadata> {
+		if let Some(pallet_meta) = Self::pallet_storage_metadata(pallet) {
+			for item in pallet_meta.entries {
+				if &item.name == &entry {
+					return Some(item.clone());
+				}
+			}
+		}
 
-        Ok(None)
-    }
+		None
+	}
 }
 
 #[macro_export]
 macro_rules! impl_pallet_storage_metadata_provider {
     (for $name: ident: $($pallet_name: literal => $pallet: ident),+) => {
-        use $crate::frame_metadata::StorageMetadata;
+        use $crate::frame_metadata::PalletStorageMetadata;
 
         impl $crate::meta_storage_reader::PalletStorageMetadataProvider for $name {
-            fn pallet_storage_metadata(pallet: &str) -> Option<StorageMetadata> {
+            fn pallet_storage_metadata(pallet: &str) -> Option<PalletStorageMetadata> {
                 match pallet {
                     $($pallet_name => Some($pallet::storage_metadata())),+
                     ,_ => None
                 }
             }
         }
-    }
-}
-
-impl From<InvalidMetadata> for ExitError {
-    fn from(_: InvalidMetadata) -> Self {
-        ExitError::Other(Cow::Borrowed("Invalid metadata"))
     }
 }

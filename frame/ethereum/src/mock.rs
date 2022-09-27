@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,51 +17,50 @@
 
 //! Test utilities
 
-use super::*;
-use crate::{Module, Config, IntermediateStateRoot};
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
-	impl_outer_origin, parameter_types, ConsensusEngineId,
-	traits::FindAuthor
+	parameter_types,
+	traits::{ConstU32, FindAuthor},
+	weights::Weight,
+	ConsensusEngineId, PalletId,
 };
-use pallet_evm::{FeeCalculator, AddressMapping, EnsureAddressTruncated};
-use rlp::*;
-use sp_core::{H160, H256, U256};
+use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
+use rlp::RlpStream;
+use sp_core::{hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	ModuleId,
+	AccountId32,
 };
-use sp_runtime::AccountId32;
 
-impl_outer_origin! {
-	pub enum Origin for Test where system = frame_system {}
+use super::*;
+use crate::IntermediateStateRoot;
+
+pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
+
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test, (), SignedExtra>;
+type Block = frame_system::mocking::MockBlock<Test>;
+
+frame_support::construct_runtime! {
+	pub enum Test where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
+		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
+		Ethereum: crate::{Pallet, Call, Storage, Event, Origin},
+	}
 }
 
-pub struct PalletInfo;
-
-impl frame_support::traits::PalletInfo for PalletInfo {
-	fn index<P: 'static>() -> Option<usize> {
-		return Some(0)
-	}
-
-	fn name<P: 'static>() -> Option<&'static str> {
-		return Some("TestName")
-	}
-}
-
-// For testing the pallet, we construct most of a mock runtime. This means
-// first constructing a configuration type (`Test`) which `impl`s each of the
-// configuration traits of pallets we want to use.
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
 }
+
 impl frame_system::Config for Test {
-	type BaseCallFilter = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
@@ -69,12 +68,12 @@ impl frame_system::Config for Test {
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
-	type Call = ();
+	type Call = Call;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId32;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = ();
+	type Event = Event;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -83,6 +82,8 @@ impl frame_system::Config for Test {
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
+	type OnSetCode = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
@@ -95,11 +96,13 @@ parameter_types! {
 impl pallet_balances::Config for Test {
 	type MaxLocks = MaxLocks;
 	type Balance = u64;
-	type Event = ();
+	type Event = Event;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = ();
 }
 
 parameter_types! {
@@ -115,15 +118,16 @@ impl pallet_timestamp::Config for Test {
 
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		1.into()
+	fn min_gas_price() -> (U256, Weight) {
+		(1.into(), 0u64)
 	}
 }
 
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
-	fn find_author<'a, I>(_digests: I) -> Option<H160> where
-		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+	fn find_author<'a, I>(_digests: I) -> Option<H160>
+	where
+		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
 	{
 		Some(address_build(0).address)
 	}
@@ -132,9 +136,9 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const ChainId: u64 = 42;
-	pub const EVMModuleId: ModuleId = ModuleId(*b"py/evmpa");
+	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
 	pub const BlockGasLimit: U256 = U256::MAX;
-    pub const ByteReadWeight: Weight = 10;
+	pub const ByteReadWeight: Weight = 10;
 }
 
 pub struct HashedAddressMapping;
@@ -150,30 +154,81 @@ impl AddressMapping<AccountId32> for HashedAddressMapping {
 impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = ();
-    type ByteReadWeight = ByteReadWeight;
+	type ByteReadWeight = ByteReadWeight;
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping;
 	type Currency = Balances;
-	type Event = ();
-	type Precompiles = ();
+	type Event = Event;
+	type PrecompilesType = ();
+	type PrecompilesValue = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type ChainId = ChainId;
 	type BlockGasLimit = BlockGasLimit;
 	type OnChargeTransaction = ();
 	type FindAuthor = FindAuthorTruncated;
-	type BlockHashMapping = crate::EthereumBlockHashMapping;
+	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
 }
 
-impl Config for Test {
-	type Event = ();
-	type StateRoot = IntermediateStateRoot;
+impl crate::Config for Test {
+	type Event = Event;
+	type StateRoot = IntermediateStateRoot<Self>;
 }
 
-pub type System = frame_system::Module<Test>;
-pub type Balances = pallet_balances::Module<Test>;
-pub type Ethereum = Module<Test>;
-pub type Evm = pallet_evm::Module<Test>;
+impl fp_self_contained::SelfContainedCall for Call {
+	type SignedInfo = H160;
+
+	fn is_self_contained(&self) -> bool {
+		match self {
+			Call::Ethereum(call) => call.is_self_contained(),
+			_ => false,
+		}
+	}
+
+	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+		match self {
+			Call::Ethereum(call) => call.check_self_contained(),
+			_ => None,
+		}
+	}
+
+	fn validate_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+		dispatch_info: &DispatchInfoOf<Call>,
+		len: usize,
+	) -> Option<TransactionValidity> {
+		match self {
+			Call::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+			_ => None,
+		}
+	}
+
+	fn pre_dispatch_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+		dispatch_info: &DispatchInfoOf<Call>,
+		len: usize,
+	) -> Option<Result<(), TransactionValidityError>> {
+		match self {
+			Call::Ethereum(call) => call.pre_dispatch_self_contained(info, dispatch_info, len),
+			_ => None,
+		}
+	}
+
+	fn apply_self_contained(
+		self,
+		info: Self::SignedInfo,
+	) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>> {
+		use sp_runtime::traits::Dispatchable as _;
+		match self {
+			call @ Call::Ethereum(crate::Call::transact { .. }) => {
+				Some(call.dispatch(Origin::from(crate::RawOrigin::EthereumTransaction(info))))
+			}
+			_ => None,
+		}
+	}
+}
 
 pub struct AccountInfo {
 	pub address: H160,
@@ -185,9 +240,7 @@ fn address_build(seed: u8) -> AccountInfo {
 	let private_key = H256::from_slice(&[(seed + 1) as u8; 32]); //H256::from_low_u64_be((i + 1) as u64);
 	let secret_key = libsecp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
 	let public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
-	let address = H160::from(H256::from_slice(
-		&Keccak256::digest(public_key)[..],
-	));
+	let address = H160::from(H256::from(keccak_256(public_key)));
 
 	let mut data = [0u8; 32];
 	data[0..20].copy_from_slice(&address[..]);
@@ -195,10 +248,9 @@ fn address_build(seed: u8) -> AccountInfo {
 	AccountInfo {
 		private_key,
 		account_id: AccountId32::from(Into::<[u8; 32]>::into(data)),
-		address
+		address,
 	}
 }
-
 
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
@@ -212,16 +264,39 @@ pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExtern
 		.map(|i| address_build(i as u8))
 		.collect::<Vec<_>>();
 
-
 	let balances: Vec<_> = (0..accounts_len)
-		.map(|i| {
-			(pairs[i].account_id.clone(), 10_000_000)
-		})
+		.map(|i| (pairs[i].account_id.clone(), 10_000_000))
 		.collect();
 
 	pallet_balances::GenesisConfig::<Test> { balances }
-			.assimilate_storage(&mut ext)
-			.unwrap();
+		.assimilate_storage(&mut ext)
+		.unwrap();
+
+	(pairs, ext.into())
+}
+
+// This function basically just builds a genesis storage key/value store according to
+// our desired mockup.
+pub fn new_test_ext_with_initial_balance(
+	accounts_len: usize,
+	initial_balance: u64,
+) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
+	// sc_cli::init_logger("");
+	let mut ext = frame_system::GenesisConfig::default()
+		.build_storage::<Test>()
+		.unwrap();
+
+	let pairs = (0..accounts_len)
+		.map(|i| address_build(i as u8))
+		.collect::<Vec<_>>();
+
+	let balances: Vec<_> = (0..accounts_len)
+		.map(|i| (pairs[i].account_id.clone(), initial_balance))
+		.collect();
+
+	pallet_balances::GenesisConfig::<Test> { balances }
+		.assimilate_storage(&mut ext)
+		.unwrap();
 
 	(pairs, ext.into())
 }
@@ -231,16 +306,16 @@ pub fn contract_address(sender: H160, nonce: u64) -> H160 {
 	rlp.append(&sender);
 	rlp.append(&nonce);
 
-	H160::from_slice(&Keccak256::digest(&rlp.out())[12..])
+	H160::from_slice(&keccak_256(&rlp.out())[12..])
 }
 
 pub fn storage_address(sender: H160, slot: H256) -> H256 {
-	H256::from_slice(&Keccak256::digest(
+	H256::from(keccak_256(
 		[&H256::from(sender)[..], &slot[..]].concat().as_slice(),
 	))
 }
 
-pub struct UnsignedTransaction {
+pub struct LegacyUnsignedTransaction {
 	pub nonce: U256,
 	pub gas_price: U256,
 	pub gas_limit: U256,
@@ -249,7 +324,7 @@ pub struct UnsignedTransaction {
 	pub input: Vec<u8>,
 }
 
-impl UnsignedTransaction {
+impl LegacyUnsignedTransaction {
 	fn signing_rlp_append(&self, s: &mut RlpStream) {
 		s.begin_list(9);
 		s.append(&self.nonce);
@@ -266,23 +341,30 @@ impl UnsignedTransaction {
 	fn signing_hash(&self) -> H256 {
 		let mut stream = RlpStream::new();
 		self.signing_rlp_append(&mut stream);
-		H256::from_slice(&Keccak256::digest(&stream.out()).as_slice())
+		H256::from(keccak_256(&stream.out()))
 	}
 
 	pub fn sign(&self, key: &H256) -> Transaction {
+		self.sign_with_chain_id(key, ChainId::get())
+	}
+
+	pub fn sign_with_chain_id(&self, key: &H256, chain_id: u64) -> Transaction {
 		let hash = self.signing_hash();
 		let msg = libsecp256k1::Message::parse(hash.as_fixed_bytes());
-		let s = libsecp256k1::sign(&msg, &libsecp256k1::SecretKey::parse_slice(&key[..]).unwrap());
+		let s = libsecp256k1::sign(
+			&msg,
+			&libsecp256k1::SecretKey::parse_slice(&key[..]).unwrap(),
+		);
 		let sig = s.0.serialize();
 
 		let sig = TransactionSignature::new(
-			s.1.serialize() as u64 % 2 + ChainId::get() * 2 + 35,
+			s.1.serialize() as u64 % 2 + chain_id * 2 + 35,
 			H256::from_slice(&sig[0..32]),
 			H256::from_slice(&sig[32..64]),
 		)
-			.unwrap();
+		.unwrap();
 
-		Transaction {
+		Transaction::Legacy(ethereum::LegacyTransaction {
 			nonce: self.nonce,
 			gas_price: self.gas_price,
 			gas_limit: self.gas_limit,
@@ -290,6 +372,107 @@ impl UnsignedTransaction {
 			value: self.value,
 			input: self.input.clone(),
 			signature: sig,
-		}
+		})
+	}
+}
+
+pub struct EIP2930UnsignedTransaction {
+	pub nonce: U256,
+	pub gas_price: U256,
+	pub gas_limit: U256,
+	pub action: TransactionAction,
+	pub value: U256,
+	pub input: Vec<u8>,
+}
+
+impl EIP2930UnsignedTransaction {
+	pub fn sign(&self, secret: &H256, chain_id: Option<u64>) -> Transaction {
+		let secret = {
+			let mut sk: [u8; 32] = [0u8; 32];
+			sk.copy_from_slice(&secret[0..]);
+			libsecp256k1::SecretKey::parse(&sk).unwrap()
+		};
+		let chain_id = chain_id.unwrap_or(ChainId::get());
+		let msg = ethereum::EIP2930TransactionMessage {
+			chain_id,
+			nonce: self.nonce,
+			gas_price: self.gas_price,
+			gas_limit: self.gas_limit,
+			action: self.action,
+			value: self.value,
+			input: self.input.clone(),
+			access_list: vec![],
+		};
+		let signing_message = libsecp256k1::Message::parse_slice(&msg.hash()[..]).unwrap();
+
+		let (signature, recid) = libsecp256k1::sign(&signing_message, &secret);
+		let rs = signature.serialize();
+		let r = H256::from_slice(&rs[0..32]);
+		let s = H256::from_slice(&rs[32..64]);
+		Transaction::EIP2930(ethereum::EIP2930Transaction {
+			chain_id: msg.chain_id,
+			nonce: msg.nonce,
+			gas_price: msg.gas_price,
+			gas_limit: msg.gas_limit,
+			action: msg.action,
+			value: msg.value,
+			input: msg.input.clone(),
+			access_list: msg.access_list,
+			odd_y_parity: recid.serialize() != 0,
+			r,
+			s,
+		})
+	}
+}
+
+pub struct EIP1559UnsignedTransaction {
+	pub nonce: U256,
+	pub max_priority_fee_per_gas: U256,
+	pub max_fee_per_gas: U256,
+	pub gas_limit: U256,
+	pub action: TransactionAction,
+	pub value: U256,
+	pub input: Vec<u8>,
+}
+
+impl EIP1559UnsignedTransaction {
+	pub fn sign(&self, secret: &H256, chain_id: Option<u64>) -> Transaction {
+		let secret = {
+			let mut sk: [u8; 32] = [0u8; 32];
+			sk.copy_from_slice(&secret[0..]);
+			libsecp256k1::SecretKey::parse(&sk).unwrap()
+		};
+		let chain_id = chain_id.unwrap_or(ChainId::get());
+		let msg = ethereum::EIP1559TransactionMessage {
+			chain_id,
+			nonce: self.nonce,
+			max_priority_fee_per_gas: self.max_priority_fee_per_gas,
+			max_fee_per_gas: self.max_fee_per_gas,
+			gas_limit: self.gas_limit,
+			action: self.action,
+			value: self.value,
+			input: self.input.clone(),
+			access_list: vec![],
+		};
+		let signing_message = libsecp256k1::Message::parse_slice(&msg.hash()[..]).unwrap();
+
+		let (signature, recid) = libsecp256k1::sign(&signing_message, &secret);
+		let rs = signature.serialize();
+		let r = H256::from_slice(&rs[0..32]);
+		let s = H256::from_slice(&rs[32..64]);
+		Transaction::EIP1559(ethereum::EIP1559Transaction {
+			chain_id: msg.chain_id,
+			nonce: msg.nonce,
+			max_priority_fee_per_gas: msg.max_priority_fee_per_gas,
+			max_fee_per_gas: msg.max_fee_per_gas,
+			gas_limit: msg.gas_limit,
+			action: msg.action,
+			value: msg.value,
+			input: msg.input.clone(),
+			access_list: msg.access_list,
+			odd_y_parity: recid.serialize() != 0,
+			r,
+			s,
+		})
 	}
 }

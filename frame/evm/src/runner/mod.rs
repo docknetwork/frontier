@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,13 +17,33 @@
 
 pub mod stack;
 
-use sp_std::vec::Vec;
-use sp_core::{H160, U256, H256};
-use fp_evm::{CallInfo, CreateInfo};
 use crate::Config;
+use fp_evm::{CallInfo, CreateInfo};
+use sp_core::{H160, H256, U256};
+use sp_std::vec::Vec;
+
+#[derive(Debug)]
+pub struct RunnerError<E: Into<sp_runtime::DispatchError>> {
+	pub error: E,
+	pub weight: frame_support::weights::Weight,
+}
 
 pub trait Runner<T: Config> {
 	type Error: Into<sp_runtime::DispatchError>;
+
+	fn validate(
+		source: H160,
+		target: Option<H160>,
+		input: Vec<u8>,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
+		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
+		evm_config: &evm::Config,
+	) -> Result<(), RunnerError<Self::Error>>;
 
 	fn call(
 		source: H160,
@@ -31,20 +51,28 @@ pub trait Runner<T: Config> {
 		input: Vec<u8>,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
+		validate: bool,
 		config: &evm::Config,
-	) -> Result<CallInfo, Self::Error>;
+	) -> Result<CallInfo, RunnerError<Self::Error>>;
 
 	fn create(
 		source: H160,
 		init: Vec<u8>,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
+		validate: bool,
 		config: &evm::Config,
-	) -> Result<CreateInfo, Self::Error>;
+	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 
 	fn create2(
 		source: H160,
@@ -52,8 +80,12 @@ pub trait Runner<T: Config> {
 		salt: H256,
 		value: U256,
 		gas_limit: u64,
-		gas_price: Option<U256>,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
+		validate: bool,
 		config: &evm::Config,
-	) -> Result<CreateInfo, Self::Error>;
+	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 }

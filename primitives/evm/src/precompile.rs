@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,60 +15,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub use evm::{
+	executor::stack::{PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileSet},
+	Context, ExitError, ExitRevert, ExitSucceed, Transfer,
+};
 use sp_std::vec::Vec;
-use sp_core::H160;
-use impl_trait_for_tuples::impl_for_tuples;
-use evm::{ExitSucceed, ExitError, Context, executor::PrecompileOutput};
 
-/// Custom precompiles to be used by EVM engine.
-pub trait PrecompileSet {
-	/// Try to execute the code address as precompile. If the code address is not
-	/// a precompile or the precompile is not yet available, return `None`.
-	/// Otherwise, calculate the amount of gas needed with given `input` and
-	/// `target_gas`. Return `Some(Ok(status, output, gas_used))` if the execution
-	/// is successful. Otherwise return `Some(Err(_))`.
-	fn execute(
-		address: H160,
-		input: &[u8],
-		target_gas: Option<u64>,
-		context: &Context,
-	) -> Option<core::result::Result<PrecompileOutput, ExitError>>;
-}
+pub type PrecompileResult = Result<PrecompileOutput, PrecompileFailure>;
 
 /// One single precompile used by EVM engine.
 pub trait Precompile {
-	/// Try to execute the precompile. Calculate the amount of gas needed with given `input` and
-	/// `target_gas`. Return `Ok(status, output, gas_used)` if the execution is
-	/// successful. Otherwise return `Err(_)`.
-	fn execute(
-		input: &[u8],
-		target_gas: Option<u64>,
-		context: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError>;
-}
-
-#[impl_for_tuples(16)]
-#[tuple_types_no_default_trait_bound]
-impl PrecompileSet for Tuple {
-	for_tuples!( where #( Tuple: Precompile )* );
-
-	fn execute(
-		address: H160,
-		input: &[u8],
-		target_gas: Option<u64>,
-		context: &Context,
-	) -> Option<core::result::Result<PrecompileOutput, ExitError>> {
-		let mut index = 0;
-
-		for_tuples!( #(
-			index += 1;
-			if address == H160::from_low_u64_be(index) {
-				return Some(Tuple::execute(input, target_gas, context))
-			}
-		)* );
-
-		None
-	}
+	/// Try to execute the precompile with given `handle` which provides all call data
+	/// and allow to register costs and logs.
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult;
 }
 
 pub trait LinearCostPrecompile {
@@ -78,23 +37,19 @@ pub trait LinearCostPrecompile {
 	fn execute(
 		input: &[u8],
 		cost: u64,
-	) -> core::result::Result<(ExitSucceed, Vec<u8>), ExitError>;
+	) -> core::result::Result<(ExitSucceed, Vec<u8>), PrecompileFailure>;
 }
 
 impl<T: LinearCostPrecompile> Precompile for T {
-	fn execute(
-		input: &[u8],
-		target_gas: Option<u64>,
-		_: &Context,
-	) -> core::result::Result<PrecompileOutput, ExitError> {
-		let cost = ensure_linear_cost(target_gas, input.len() as u64, T::BASE, T::WORD)?;
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		let target_gas = handle.gas_limit();
+		let cost = ensure_linear_cost(target_gas, handle.input().len() as u64, T::BASE, T::WORD)?;
 
-		let (exit_status, output) = T::execute(input, cost)?;
+		handle.record_cost(cost)?;
+		let (exit_status, output) = T::execute(handle.input(), cost)?;
 		Ok(PrecompileOutput {
 			exit_status,
-			cost,
 			output,
-			logs: Default::default(),
 		})
 	}
 }
@@ -104,15 +59,23 @@ fn ensure_linear_cost(
 	target_gas: Option<u64>,
 	len: u64,
 	base: u64,
-	word: u64
-) -> Result<u64, ExitError> {
-	let cost = base.checked_add(
-		word.checked_mul(len.saturating_add(31) / 32).ok_or(ExitError::OutOfGas)?
-	).ok_or(ExitError::OutOfGas)?;
+	word: u64,
+) -> Result<u64, PrecompileFailure> {
+	let cost = base
+		.checked_add(word.checked_mul(len.saturating_add(31) / 32).ok_or(
+			PrecompileFailure::Error {
+				exit_status: ExitError::OutOfGas,
+			},
+		)?)
+		.ok_or(PrecompileFailure::Error {
+			exit_status: ExitError::OutOfGas,
+		})?;
 
 	if let Some(target_gas) = target_gas {
 		if cost > target_gas {
-			return Err(ExitError::OutOfGas)
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::OutOfGas,
+			});
 		}
 	}
 

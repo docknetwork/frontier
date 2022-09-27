@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ mod block;
 mod block_number;
 mod bytes;
 mod call_request;
+mod fee;
 mod filter;
 mod index;
 mod log;
@@ -34,24 +35,25 @@ mod work;
 
 pub mod pubsub;
 
-pub use self::account_info::{AccountInfo, ExtAccountInfo, EthAccount, StorageProof, RecoveredAccount};
-pub use self::bytes::Bytes;
-pub use self::block::{RichBlock, Block, BlockTransactions, Header, RichHeader, Rich};
-pub use self::block_number::BlockNumber;
-pub use self::call_request::CallRequest;
-pub use self::filter::{
-	Filter, FilterChanges, FilterPool, FilterPoolItem, FilterType, VariadicValue, FilterAddress,
-	Topic, FilteredParams,
+pub use self::{
+	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
+	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
+	block_number::BlockNumber,
+	bytes::Bytes,
+	call_request::CallRequest,
+	fee::{FeeHistory, FeeHistoryCache, FeeHistoryCacheItem, FeeHistoryCacheLimit},
+	filter::{
+		Filter, FilterAddress, FilterChanges, FilterPool, FilterPoolItem, FilterType,
+		FilteredParams, Topic, VariadicValue,
+	},
+	index::Index,
+	log::Log,
+	receipt::Receipt,
+	sync::{
+		ChainStatus, EthProtocolInfo, PeerCount, PeerInfo, PeerNetworkInfo, PeerProtocolsInfo,
+		Peers, PipProtocolInfo, SyncInfo, SyncStatus, TransactionStats,
+	},
+	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
+	transaction_request::{TransactionMessage, TransactionRequest},
+	work::Work,
 };
-pub use self::index::Index;
-pub use self::log::Log;
-pub use self::receipt::Receipt;
-pub use self::sync::{
-	SyncStatus, SyncInfo, Peers, PeerInfo, PeerNetworkInfo, PeerProtocolsInfo,
-	TransactionStats, ChainStatus, EthProtocolInfo, PipProtocolInfo, PeerCount,
-};
-pub use self::transaction::{
-	Transaction, RichRawTransaction, LocalTransactionStatus, PendingTransactions, PendingTransaction,
-};
-pub use self::transaction_request::TransactionRequest;
-pub use self::work::Work;

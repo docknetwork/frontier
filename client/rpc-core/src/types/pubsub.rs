@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,11 +18,10 @@
 
 //! Pub-Sub types.
 
+use crate::types::{Filter, Log, RichHeader};
 use ethereum_types::H256;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde::de::Error;
-use serde_json::{Value, from_value};
-use crate::types::{RichHeader, Filter, Log};
+use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
+use serde_json::{from_value, Value};
 
 /// Subscription result.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,20 +33,30 @@ pub enum Result {
 	/// Transaction hash
 	TransactionHash(H256),
 	/// SyncStatus
-	SyncState(PubSubSyncStatus)
+	SyncState(PubSubSyncStatus),
+}
+#[derive(Debug, Serialize, Eq, PartialEq, Clone)]
+#[serde(untagged)]
+pub enum PubSubSyncStatus {
+	Simple(bool),
+	Detailed(SyncStatusMetadata),
 }
 
 /// PubSbub sync status
 #[derive(Debug, Serialize, Eq, PartialEq, Clone)]
-#[serde(rename_all="camelCase")]
-pub struct PubSubSyncStatus {
-	/// is_major_syncing?
+#[serde(rename_all = "camelCase")]
+pub struct SyncStatusMetadata {
 	pub syncing: bool,
+	pub starting_block: u64,
+	pub current_block: u64,
+	#[serde(default = "Default::default", skip_serializing_if = "Option::is_none")]
+	pub highest_block: Option<u64>,
 }
 
 impl Serialize for Result {
 	fn serialize<S>(&self, serializer: S) -> ::std::result::Result<S::Ok, S::Error>
-		where S: Serializer
+	where
+		S: Serializer,
 	{
 		match *self {
 			Result::Header(ref header) => header.serialize(serializer),
@@ -90,14 +99,17 @@ impl Default for Params {
 
 impl<'a> Deserialize<'a> for Params {
 	fn deserialize<D>(deserializer: D) -> ::std::result::Result<Params, D::Error>
-	where D: Deserializer<'a> {
+	where
+		D: Deserializer<'a>,
+	{
 		let v: Value = Deserialize::deserialize(deserializer)?;
 
 		if v.is_null() {
 			return Ok(Params::None);
 		}
 
-		from_value(v.clone()).map(Params::Logs)
+		from_value(v)
+			.map(Params::Logs)
 			.map_err(|e| D::Error::custom(format!("Invalid Pub-Sub parameters: {}", e)))
 	}
 }

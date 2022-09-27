@@ -2,25 +2,19 @@
 name = "pallet-evm-test-vector-support"
 version = "1.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
-homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/frontier/"
 description = "Test vector support for EVM pallet."
+repository = "https://github.com/paritytech/frontier/"
 
 [dependencies]
-hex = { version = "0.4.0", optional = true }
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
-serde_json = { version = "1.0", optional = true }
-evm = { version = "0.27.0", default-features = false, features = ["with-codec"] }
-fp-evm = { version = "2.0.0-dev", default-features = false, path = "../../../primitives/evm" }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c", features = ["with-codec"] }
+hex = "0.4.3"
+serde = { version = "1.0.101", features = ["derive"] }
+serde_json = "1.0"
 
-[features]
-default = ["std"]
-std = [
-	"hex",
-	"serde",
-	"serde_json",
-	"evm/std",
-	"fp-evm/std",
-]
+# Substrate
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
+
+# Frontier
+fp-evm = { version = "3.0.0-dev", path = "../../../primitives/evm", default-features = false }

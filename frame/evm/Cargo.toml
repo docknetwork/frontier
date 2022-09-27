@@ -1,64 +1,74 @@
 [package]
 name = "pallet-evm"
-version = "5.0.0-dev"
+version = "6.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
-homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/frontier/"
-description = "FRAME EVM contracts pallet"
 readme = "README.md"
+description = "FRAME EVM contracts pallet"
+repository = "https://github.com/paritytech/frontier/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-frame-system = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-timestamp = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-balances = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-core = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-frame-benchmarking = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "frontier", default-features = false, optional = true }
-fp-evm = { version = "2.0.0", default-features = false, path = "../../primitives/evm" }
-primitive-types = { version = "0.9.0", default-features = false, features = ["rlp", "byteorder"] }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c", default-features = false, features = ["with-codec"] }
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+log = { version = "0.4.17", default-features = false }
+serde = { version = "1.0.144", optional = true, features = ["derive"] }
+
+# Parity
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+primitive-types = { version = "0.11.1", default-features = false, features = ["rlp", "byteorder"] }
 rlp = { version = "0.5", default-features = false }
-evm = { version = "0.27.0", default-features = false, features = ["with-codec"] }
-evm-runtime = { version = "0.27.0", default-features = false }
-evm-gasometer = { version = "0.27.0", default-features = false }
-sha3 = { version = "0.8", default-features = false }
-log = { version = "0.4", default-features = false }
-hex = { version = "0.4", default-features = false }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+
+# Substate
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
+sp-std = { version = "4.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
+# Substrate FRAME
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false, optional = true }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
+
+# Frontier
+fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
+
+[dev-dependencies]
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 
 [features]
 default = ["std"]
 std = [
-	"serde",
-	"codec/std",
-	"sp-core/std",
-	"sp-runtime/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-balances/std",
-	"sp-io/std",
-	"frame-benchmarking/std",
-	"sp-std/std",
-	"fp-evm/std",
-	"sha3/std",
-	"rlp/std",
-	"primitive-types/std",
 	"evm/std",
 	"evm/with-serde",
-	"evm-runtime/std",
-	"evm-gasometer/std",
-	"pallet-timestamp/std",
-	"log/std",
 	"hex/std",
+	"log/std",
+	"serde",
+	# Parity
+	"codec/std",
+	"primitive-types/std",
+	"rlp/std",
+	"scale-info/std",
+	# Substrate
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	# Substrate FRAME
+	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-timestamp/std",
+	# Frontier
+	"fp-evm/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
 ]

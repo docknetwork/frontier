@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,13 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::ops::Deref;
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, ops::Deref};
 
-use ethereum_types::{H160, H256, U256, Bloom as H2048};
-use serde::ser::Error;
-use serde::{Serialize, Serializer};
 use crate::types::{Bytes, Transaction};
+use ethereum_types::{Bloom as H2048, H160, H256, H64, U256};
+use serde::{ser::Error, Serialize, Serializer};
 
 /// Block Transactions
 #[derive(Debug)]
@@ -30,15 +28,17 @@ pub enum BlockTransactions {
 	/// Only hashes
 	Hashes(Vec<H256>),
 	/// Full transactions
-	Full(Vec<Transaction>)
+	Full(Vec<Transaction>),
 }
 
 impl Serialize for BlockTransactions {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where S: Serializer {
+	where
+		S: Serializer,
+	{
 		match *self {
 			BlockTransactions::Hashes(ref hashes) => hashes.serialize(serializer),
-			BlockTransactions::Full(ref ts) => ts.serialize(serializer)
+			BlockTransactions::Full(ref ts) => ts.serialize(serializer),
 		}
 	}
 }
@@ -47,47 +47,20 @@ impl Serialize for BlockTransactions {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Block {
-	/// Hash of the block
-	pub hash: Option<H256>,
-	/// Hash of the parent
-	pub parent_hash: H256,
-	/// Hash of the uncles
-	#[serde(rename = "sha3Uncles")]
-	pub uncles_hash: H256,
-	/// Authors address
-	pub author: H160,
-	/// Alias of `author`
-	pub miner: H160,
-	/// State root hash
-	pub state_root: H256,
-	/// Transactions root hash
-	pub transactions_root: H256,
-	/// Transactions receipts root hash
-	pub receipts_root: H256,
-	/// Block number
-	pub number: Option<U256>,
-	/// Gas Used
-	pub gas_used: U256,
-	/// Gas Limit
-	pub gas_limit: U256,
-	/// Extra data
-	pub extra_data: Bytes,
-	/// Logs bloom
-	pub logs_bloom: Option<H2048>,
-	/// Timestamp
-	pub timestamp: U256,
-	/// Difficulty
-	pub difficulty: U256,
+	/// Header of the block
+	#[serde(flatten)]
+	pub header: Header,
 	/// Total difficulty
 	pub total_difficulty: U256,
-	/// Seal fields
-	pub seal_fields: Vec<Bytes>,
 	/// Uncles' hashes
 	pub uncles: Vec<H256>,
 	/// Transactions
 	pub transactions: BlockTransactions,
 	/// Size in bytes
 	pub size: Option<U256>,
+	/// Base Fee for post-EIP1559 blocks.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub base_fee_per_gas: Option<U256>,
 }
 
 /// Block header representation.
@@ -125,8 +98,8 @@ pub struct Header {
 	pub timestamp: U256,
 	/// Difficulty
 	pub difficulty: U256,
-	/// Seal fields
-	pub seal_fields: Vec<Bytes>,
+	/// Nonce
+	pub nonce: Option<H64>,
 	/// Size in bytes
 	pub size: Option<U256>,
 }
@@ -156,7 +129,10 @@ impl<T> Deref for Rich<T> {
 }
 
 impl<T: Serialize> Serialize for Rich<T> {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+	{
 		use serde_json::{to_value, Value};
 
 		let serialized = (to_value(&self.inner), to_value(&self.extra_info));
@@ -166,7 +142,9 @@ impl<T: Serialize> Serialize for Rich<T> {
 			// and serialize
 			value.serialize(serializer)
 		} else {
-			Err(S::Error::custom("Unserializable structures: expected objects"))
+			Err(S::Error::custom(
+				"Unserializable structures: expected objects",
+			))
 		}
 	}
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,31 +18,18 @@
 
 //! Eth PUB-SUB rpc interface.
 
-use jsonrpc_core::Result;
-use jsonrpc_derive::rpc;
-use jsonrpc_pubsub::{typed, SubscriptionId};
+use jsonrpsee::proc_macros::rpc;
 
 use crate::types::pubsub;
-
-pub use rpc_impl_EthPubSubApi::gen_server::EthPubSubApi as EthPubSubApiServer;
 
 /// Eth PUB-SUB rpc interface.
 #[rpc(server)]
 pub trait EthPubSubApi {
-	/// RPC Metadata
-	type Metadata;
-
 	/// Subscribe to Eth subscription.
-	#[pubsub(subscription = "eth_subscription", subscribe, name = "eth_subscribe")]
-	fn subscribe(
-		&self,
-		_: Self::Metadata,
-		_: typed::Subscriber<pubsub::Result>,
-		_: pubsub::Kind,
-		_: Option<pubsub::Params>,
-	);
-
-	/// Unsubscribe from existing Eth subscription.
-	#[pubsub(subscription = "eth_subscription", unsubscribe, name = "eth_unsubscribe")]
-	fn unsubscribe(&self, _: Option<Self::Metadata>, _: SubscriptionId) -> Result<bool>;
+	#[subscription(
+		name = "eth_subscribe" => "eth_subscription",
+		unsubscribe = "eth_unsubscribe",
+		item = pubsub::Result
+	)]
+	fn subscribe(&self, kind: pubsub::Kind, params: Option<pubsub::Params>);
 }

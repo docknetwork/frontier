@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::large_enum_variant)]
 
-use codec::{Encode, Decode};
-use sp_std::vec::Vec;
+use codec::{Decode, Encode};
 use sp_core::H256;
 use sp_runtime::{
-	ConsensusEngineId, generic::{Digest, OpaqueDigestItemId},
+	generic::{Digest, OpaqueDigestItemId},
+	ConsensusEngineId,
 };
-use sha3::{Digest as Sha3Digest, Keccak256};
+use sp_std::vec::Vec;
 
 pub const FRONTIER_ENGINE_ID: ConsensusEngineId = [b'f', b'r', b'o', b'n'];
 
@@ -46,7 +47,7 @@ impl Log {
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum PreLog {
 	#[codec(index = 3)]
-	Block(ethereum::Block),
+	Block(ethereum::BlockV2),
 }
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
@@ -54,7 +55,7 @@ pub enum PostLog {
 	#[codec(index = 1)]
 	Hashes(Hashes),
 	#[codec(index = 2)]
-	Block(ethereum::Block),
+	Block(ethereum::BlockV2),
 }
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
@@ -66,19 +67,19 @@ pub struct Hashes {
 }
 
 impl Hashes {
-	pub fn from_block(block: ethereum::Block) -> Self {
+	pub fn from_block(block: ethereum::BlockV2) -> Self {
 		let mut transaction_hashes = Vec::new();
 
 		for t in &block.transactions {
-			let transaction_hash = H256::from_slice(
-				Keccak256::digest(&rlp::encode(t)).as_slice()
-			);
-			transaction_hashes.push(transaction_hash);
+			transaction_hashes.push(t.hash());
 		}
 
 		let block_hash = block.header.hash();
 
-		Hashes { transaction_hashes, block_hash }
+		Hashes {
+			transaction_hashes,
+			block_hash,
+		}
 	}
 }
 
@@ -88,43 +89,33 @@ pub enum FindLogError {
 	MultipleLogs,
 }
 
-pub fn find_pre_log<Hash>(
-	digest: &Digest<Hash>,
-) -> Result<PreLog, FindLogError> {
-	let mut found = None;
-
-	for log in digest.logs() {
-		let log = log.try_to::<PreLog>(OpaqueDigestItemId::PreRuntime(&FRONTIER_ENGINE_ID));
-		match (log, found.is_some()) {
-			(Some(_), true) => return Err(FindLogError::MultipleLogs),
-			(Some(log), false) => found = Some(log),
-			(None, _) => (),
-		}
-	}
-
-	found.ok_or(FindLogError::NotFound)
+pub fn find_pre_log(digest: &Digest) -> Result<PreLog, FindLogError> {
+	_find_log(digest, OpaqueDigestItemId::PreRuntime(&FRONTIER_ENGINE_ID))
 }
 
-pub fn find_post_log<Hash>(
-	digest: &Digest<Hash>,
-) -> Result<PostLog, FindLogError> {
-	let mut found = None;
-
-	for log in digest.logs() {
-		let log = log.try_to::<PostLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
-		match (log, found.is_some()) {
-			(Some(_), true) => return Err(FindLogError::MultipleLogs),
-			(Some(log), false) => found = Some(log),
-			(None, _) => (),
-		}
-	}
-
-	found.ok_or(FindLogError::NotFound)
+pub fn find_post_log(digest: &Digest) -> Result<PostLog, FindLogError> {
+	_find_log(digest, OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID))
 }
 
-pub fn find_log<Hash>(
-	digest: &Digest<Hash>,
+fn _find_log<Log: Decode>(
+	digest: &Digest,
+	digest_item_id: OpaqueDigestItemId,
 ) -> Result<Log, FindLogError> {
+	let mut found = None;
+
+	for log in digest.logs() {
+		let log = log.try_to::<Log>(digest_item_id);
+		match (log, found.is_some()) {
+			(Some(_), true) => return Err(FindLogError::MultipleLogs),
+			(Some(log), false) => found = Some(log),
+			(None, _) => (),
+		}
+	}
+
+	found.ok_or(FindLogError::NotFound)
+}
+
+pub fn find_log(digest: &Digest) -> Result<Log, FindLogError> {
 	let mut found = None;
 
 	for log in digest.logs() {
@@ -146,30 +137,6 @@ pub fn find_log<Hash>(
 	found.ok_or(FindLogError::NotFound)
 }
 
-pub fn ensure_log<Hash>(
-	digest: &Digest<Hash>,
-) -> Result<(), FindLogError> {
-	let mut found = false;
-
-	for log in digest.logs() {
-		let pre_log = log.try_to::<PreLog>(OpaqueDigestItemId::PreRuntime(&FRONTIER_ENGINE_ID));
-		match (pre_log, found) {
-			(Some(_), true) => return Err(FindLogError::MultipleLogs),
-			(Some(_), false) => found = true,
-			(None, _) => (),
-		}
-
-		let post_log = log.try_to::<PostLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
-		match (post_log, found) {
-			(Some(_), true) => return Err(FindLogError::MultipleLogs),
-			(Some(_), false) => found = true,
-			(None, _) => (),
-		}
-	}
-
-	if found {
-		Ok(())
-	} else {
-		Err(FindLogError::NotFound)
-	}
+pub fn ensure_log(digest: &Digest) -> Result<(), FindLogError> {
+	find_log(digest).map(|_log| ())
 }

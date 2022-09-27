@@ -15,7 +15,7 @@ contract PalletStorageAccessor {
   }
 
   function getStorage(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey) public returns (bool, bytes memory) {
-    address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000009);
+    address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000006);
     bytes memory encodedKey = encodeKey(keyType, firstKey, secondKey);
     bytes memory palletBytes = bytes(pallet);
     bytes memory memberBytes = bytes(member);
@@ -33,7 +33,7 @@ contract PalletStorageAccessor {
   }
 
   function getStorageWithOffset(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 offset) public returns (bool, bytes memory) {
-    address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000009);
+    address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000006);
     bytes memory encodedKey = encodeKey(keyType, firstKey, secondKey);
     bytes memory palletBytes = bytes(pallet);
     bytes memory memberBytes = bytes(member);
@@ -52,7 +52,7 @@ contract PalletStorageAccessor {
   }
 
   function getStorageWithLen(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 len) public returns (bool, bytes memory) {
-    address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000009);
+    address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000006);
     bytes memory encodedKey = encodeKey(keyType, firstKey, secondKey);
     bytes memory palletBytes = bytes(pallet);
     bytes memory memberBytes = bytes(member);
@@ -71,7 +71,7 @@ contract PalletStorageAccessor {
   }
 
   function getStorageWithOffsetLen(string calldata pallet, string calldata member, KeyType keyType, bytes calldata firstKey, bytes calldata secondKey, uint32 offset, uint32 len) public returns (bool, bytes memory) {
-    address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000009);
+    address palletStorageReaderAddress = address(0x0000000000000000000000000000000000000006);
     bytes memory encodedKey = encodeKey(keyType, firstKey, secondKey);
     bytes memory palletBytes = bytes(pallet);
     bytes memory memberBytes = bytes(member);

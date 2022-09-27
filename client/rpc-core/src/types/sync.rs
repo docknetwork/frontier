@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 use std::collections::BTreeMap;
 
-use ethereum_types::{U256, H512};
+use ethereum_types::{H512, U256};
 use serde::{Serialize, Serializer};
 
 /// Sync info
@@ -54,7 +54,7 @@ pub struct Peers {
 #[serde(untagged)]
 pub enum PeerCount {
 	U32(u32),
-	String(String)
+	String(String),
 }
 
 /// Peer connection information
@@ -119,15 +119,17 @@ pub enum SyncStatus {
 	/// Info when syncing
 	Info(SyncInfo),
 	/// Not syncing
-	None
+	None,
 }
 
 impl Serialize for SyncStatus {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where S: Serializer {
+	where
+		S: Serializer,
+	{
 		match *self {
 			SyncStatus::Info(ref info) => info.serialize(serializer),
-			SyncStatus::None => false.serialize(serializer)
+			SyncStatus::None => false.serialize(serializer),
 		}
 	}
 }

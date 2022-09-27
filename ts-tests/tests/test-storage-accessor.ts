@@ -8,13 +8,12 @@ import {
 	describeWithFrontier,
 } from "./util";
 import { AbiItem } from "web3-utils";
-import BN from "bn.js";
+import {
+	GENESIS_ACCOUNT,
+	GENESIS_ACCOUNT_PRIVATE_KEY,
+} from "./config";
 
-describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
-	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
-	const GENESIS_ACCOUNT_PRIVATE_KEY =
-		"0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
-
+describeWithFrontier("Frontier RPC (Storage accessor)", (context) => {
 	const TEST_CONTRACT_BYTECODE = PalletStorageAccessor.bytecode;
 	const TEST_CONTRACT_ABI = PalletStorageAccessor.abi as AbiItem[];
 	let contractAddress;
@@ -26,16 +25,12 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 				from: GENESIS_ACCOUNT,
 				data: TEST_CONTRACT_BYTECODE,
 				value: "0x00",
-				gasPrice: "0x01",
-				gas: "0x180000",
+				gasPrice: "0x3B9ACA00",
+				gas: "0x200000",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
-		const resp = await customRequest(
-			context.web3,
-			"eth_sendRawTransaction",
-			[tx.rawTransaction]
-		);
+		const resp = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
 		const receipt = await context.web3.eth.getTransactionReceipt(
 			resp.result
@@ -47,9 +42,9 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		const latestBlock = await context.web3.eth.getBlock("latest");
 		expect(latestBlock.transactions.length).to.equal(1);
 
-		const tx_hash = latestBlock.transactions[0];
-		const tx = await context.web3.eth.getTransaction(tx_hash);
-		expect(tx.hash).to.equal(tx_hash);
+		const txHash = latestBlock.transactions[0];
+		const tx = await context.web3.eth.getTransaction(txHash);
+		expect(tx.hash).to.equal(txHash);
 	});
 
 	it("should fail on invalid pallet", async function () {
@@ -58,7 +53,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -75,7 +70,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -92,7 +87,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -109,7 +104,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -130,7 +125,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -151,7 +146,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -179,7 +174,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -214,7 +209,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -245,7 +240,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -281,7 +276,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -307,7 +302,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 
@@ -333,7 +328,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 		let [success, rawData] = await contract.methods
@@ -361,7 +356,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 		let [success, rawData] = await contract.methods
@@ -387,7 +382,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 		let [success, rawData] = await contract.methods
@@ -414,7 +409,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 		let [success, rawData] = await contract.methods
@@ -441,7 +436,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			contractAddress,
 			{
 				from: GENESIS_ACCOUNT,
-				gasPrice: "0x01",
+				gasPrice: "0x3B9ACA00",
 			}
 		);
 		let [success, rawData] = await contract.methods

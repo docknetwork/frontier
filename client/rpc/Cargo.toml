@@ -2,45 +2,67 @@
 name = "fc-rpc"
 version = "2.0.0-dev"
 authors = ["Parity Technologies <admin@parity.io>"]
-edition = "2018"
-description = "Ethereum RPC (web3) compatibility layer for Substrate."
+edition = "2021"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+description = "Ethereum RPC (web3) compatibility layer for Substrate."
+repository = "https://github.com/paritytech/frontier/"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-jsonrpc-core = "15.0.0"
-jsonrpc-derive = "14.0.3"
-jsonrpc-core-client = "14.0.3"
-jsonrpc-pubsub = "15.0.0"
-log = "0.4.8"
-ethereum-types = "0.11.0"
-evm = "0.27.0"
-fc-consensus = { version = "2.0.0-dev", path = "../consensus" }
-fc-db = { version = "1.0.0", path = "../db" }
-fc-rpc-core = { version = "1.1.0-dev", path = "../rpc-core" }
-fp-consensus = { version = "1.0.0", path = "../../primitives/consensus" }
-fp-rpc = { version = "2.0.0-dev", path = "../../primitives/rpc" }
-fp-storage = { version = "1.0.1-dev", path = "../../primitives/storage"}
-sp-io = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-transaction-pool = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-storage = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-service = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-client-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-sc-network = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "frontier" }
-pallet-evm = { version = "5.0.0-dev", path = "../../frame/evm" }
-fp-evm = { version = "2.0.0-dev", path = "../../primitives/evm" }
-pallet-ethereum = { version = "3.0.0-dev", path = "../../frame/ethereum" }
-ethereum = { version = "0.7.1", features = ["with-codec"] }
-codec = { package = "parity-scale-codec", version = "2.0.0" }
+ethereum = { version = "0.12.0", features = ["with-codec"] }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c" }
+futures = "0.3.24"
+hex = "0.4.3"
+log = "0.4.17"
+lru = "0.8.0"
+prometheus = { version = "0.13.1", default-features = false }
+rand = "0.8"
+tokio = { version = "1.19", features = ["sync"] }
+
+# Parity
+codec = { package = "parity-scale-codec", version = "3.0.0" }
+ethereum-types = "0.13.1"
+jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
+libsecp256k1 = "0.7"
 rlp = "0.5"
-futures = { version = "0.3.1", features = ["compat"] }
-sha3 = "0.8"
-rustc-hex = { version = "2.1.0", default-features = false }
-libsecp256k1 = "0.3"
-rand = "0.7"
+
+# Substrate
+prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-network-common = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-storage = { version = "6.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+
+# Frontier
+fc-db = { version = "2.0.0-dev", path = "../db" }
+fc-rpc-core = { version = "1.1.0-dev", path = "../rpc-core" }
+fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm" }
+fp-rpc = { version = "3.0.0-dev", path = "../../primitives/rpc" }
+fp-storage = { version = "2.0.0-dev", path = "../../primitives/storage" }
+
+[dev-dependencies]
+tempfile = "3.3.0"
+# Substrate
+beefy-primitives = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
+# Frontier
+frontier-template-runtime = { path = "../../template/runtime" }
 
 [features]
 rpc_binary_search_estimate = []

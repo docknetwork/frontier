@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,25 +17,24 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 //! Net rpc interface.
-use jsonrpc_core::Result;
-use jsonrpc_derive::rpc;
-use crate::types::PeerCount;
 
-pub use rpc_impl_NetApi::gen_server::NetApi as NetApiServer;
+use jsonrpsee::{core::RpcResult as Result, proc_macros::rpc};
+
+use crate::types::PeerCount;
 
 /// Net rpc interface.
 #[rpc(server)]
 pub trait NetApi {
 	/// Returns protocol version.
-	#[rpc(name = "net_version")]
+	#[method(name = "net_version")]
 	fn version(&self) -> Result<String>;
 
 	/// Returns number of peers connected to node.
-	#[rpc(name = "net_peerCount")]
+	#[method(name = "net_peerCount")]
 	fn peer_count(&self) -> Result<PeerCount>;
 
 	/// Returns true if client is actively listening for network connections.
 	/// Otherwise false.
-	#[rpc(name = "net_listening")]
+	#[method(name = "net_listening")]
 	fn is_listening(&self) -> Result<bool>;
 }

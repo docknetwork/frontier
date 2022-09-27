@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,16 +18,28 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod precompile;
+mod validation;
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
+pub use evm::ExitReason;
+use frame_support::weights::Weight;
 #[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use sp_core::{H160, U256};
 use sp_std::vec::Vec;
-use sp_core::{U256, H160};
-use evm::ExitReason;
 
 pub use evm::backend::{Basic as Account, Log};
-pub use precompile::{Precompile, PrecompileSet, LinearCostPrecompile};
+
+pub use self::precompile::{
+	Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile,
+	PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
+	Transfer,
+};
+
+pub use self::validation::{
+	CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
+	InvalidEvmTransactionError,
+};
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
@@ -56,4 +68,30 @@ pub type CreateInfo = ExecutionInfo<H160>;
 pub enum CallOrCreateInfo {
 	Call(CallInfo),
 	Create(CreateInfo),
+}
+
+/// Account definition used for genesis block construction.
+#[cfg(feature = "std")]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+pub struct GenesisAccount {
+	/// Account nonce.
+	pub nonce: U256,
+	/// Account balance.
+	pub balance: U256,
+	/// Full account storage.
+	pub storage: std::collections::BTreeMap<sp_core::H256, sp_core::H256>,
+	/// Account code.
+	pub code: Vec<u8>,
+}
+
+/// Trait that outputs the current transaction gas price.
+pub trait FeeCalculator {
+	/// Return the minimal required gas price.
+	fn min_gas_price() -> (U256, Weight);
+}
+
+impl FeeCalculator for () {
+	fn min_gas_price() -> (U256, Weight) {
+		(U256::zero(), 0u64)
+	}
 }

@@ -31,81 +31,81 @@
 #![allow(unused_imports)]
 
 use frame_support::{
-    traits::Get,
-    weights::{constants::RocksDbWeight, Weight},
+	traits::Get,
+	weights::{constants::RocksDbWeight, Weight},
 };
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_evm_precompile_storage_reader.
 pub trait WeightInfo {
-    fn blake2_128(l: u32) -> Weight;
-    fn blake2_256(l: u32) -> Weight;
-    fn blake2_128_concat(l: u32) -> Weight;
-    fn twox_128(l: u32) -> Weight;
-    fn twox_256(l: u32) -> Weight;
-    fn twox_64_concat(l: u32) -> Weight;
-    fn identity(l: u32) -> Weight;
+	fn blake2_128(l: u32) -> Weight;
+	fn blake2_256(l: u32) -> Weight;
+	fn blake2_128_concat(l: u32) -> Weight;
+	fn twox_128(l: u32) -> Weight;
+	fn twox_256(l: u32) -> Weight;
+	fn twox_64_concat(l: u32) -> Weight;
+	fn identity(l: u32) -> Weight;
 }
 
 /// Weights for pallet_evm_precompile_storage_reader using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-    fn blake2_128(l: u32) -> Weight {
-        (767_000 as Weight)
-            // Standard Error: 0
-            .saturating_add((1_000 as Weight).saturating_mul(l as Weight))
-    }
-    fn blake2_256(l: u32) -> Weight {
-        (771_000 as Weight)
-            // Standard Error: 0
-            .saturating_add((1_000 as Weight).saturating_mul(l as Weight))
-    }
-    fn blake2_128_concat(l: u32) -> Weight {
-        (875_000 as Weight)
-            // Standard Error: 0
-            .saturating_add((1_000 as Weight).saturating_mul(l as Weight))
-    }
-    fn twox_128(_l: u32) -> Weight {
-        (998_000 as Weight)
-    }
-    fn twox_256(_l: u32) -> Weight {
-        (996_000 as Weight)
-    }
-    fn twox_64_concat(_l: u32) -> Weight {
-        (982_000 as Weight)
-    }
-    fn identity(_l: u32) -> Weight {
-        (690_000 as Weight)
-    }
+	fn blake2_128(l: u32) -> Weight {
+		(767_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+	}
+	fn blake2_256(l: u32) -> Weight {
+		(771_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+	}
+	fn blake2_128_concat(l: u32) -> Weight {
+		(875_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+	}
+	fn twox_128(_l: u32) -> Weight {
+		(998_000 as Weight)
+	}
+	fn twox_256(_l: u32) -> Weight {
+		(996_000 as Weight)
+	}
+	fn twox_64_concat(_l: u32) -> Weight {
+		(982_000 as Weight)
+	}
+	fn identity(_l: u32) -> Weight {
+		(690_000 as Weight)
+	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-    fn blake2_128(l: u32) -> Weight {
-        (767_000 as Weight)
-            // Standard Error: 0
-            .saturating_add((1_000 as Weight).saturating_mul(l as Weight))
-    }
-    fn blake2_256(l: u32) -> Weight {
-        (771_000 as Weight)
-            // Standard Error: 0
-            .saturating_add((1_000 as Weight).saturating_mul(l as Weight))
-    }
-    fn blake2_128_concat(l: u32) -> Weight {
-        (875_000 as Weight)
-            // Standard Error: 0
-            .saturating_add((1_000 as Weight).saturating_mul(l as Weight))
-    }
-    fn twox_128(_l: u32) -> Weight {
-        (998_000 as Weight)
-    }
-    fn twox_256(_l: u32) -> Weight {
-        (996_000 as Weight)
-    }
-    fn twox_64_concat(_l: u32) -> Weight {
-        (982_000 as Weight)
-    }
-    fn identity(_l: u32) -> Weight {
-        (690_000 as Weight)
-    }
+	fn blake2_128(l: u32) -> Weight {
+		(767_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+	}
+	fn blake2_256(l: u32) -> Weight {
+		(771_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+	}
+	fn blake2_128_concat(l: u32) -> Weight {
+		(875_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+	}
+	fn twox_128(_l: u32) -> Weight {
+		(998_000 as Weight)
+	}
+	fn twox_256(_l: u32) -> Weight {
+		(996_000 as Weight)
+	}
+	fn twox_64_concat(_l: u32) -> Weight {
+		(982_000 as Weight)
+	}
+	fn identity(_l: u32) -> Weight {
+		(690_000 as Weight)
+	}
 }

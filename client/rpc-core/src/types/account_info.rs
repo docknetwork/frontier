@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2015-2020 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
 
 //! Return types for RPC calls
 
-use serde::Serialize;
-use ethereum_types::{Public, Address, H160, H256, U256};
 use crate::types::Bytes;
+use ethereum_types::{Address, Public, H160, H256, U256};
+use serde::Serialize;
 
 /// Account information.
 #[derive(Debug, Default, Clone, PartialEq, Serialize)]
@@ -35,7 +35,7 @@ pub struct AccountInfo {
 pub struct StorageProof {
 	pub key: U256,
 	pub value: U256,
-	pub proof: Vec<Bytes>
+	pub proof: Vec<Bytes>,
 }
 
 /// Account information.
@@ -67,7 +67,7 @@ pub struct ExtAccountInfo {
 /// as well as information that tells if it is valid for
 /// the current chain
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct RecoveredAccount {
 	/// address of the recovered account
 	pub address: Address,
@@ -76,5 +76,5 @@ pub struct RecoveredAccount {
 	/// If the signature contains chain replay protection,
 	/// And the chain_id encoded within the signature
 	/// matches the current chain this would be true, otherwise false.
-	pub is_valid_for_current_chain: bool
+	pub is_valid_for_current_chain: bool,
 }

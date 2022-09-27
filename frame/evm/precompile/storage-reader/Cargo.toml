@@ -2,21 +2,26 @@
 name = "pallet-evm-precompile-storage-reader"
 version = "0.2.0"
 authors = ["Dock.io"]
-edition = "2018"
+edition = "2021"
 license = 'Apache-2.0'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-fp-evm = { version = "2.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
-evm = { version = "0.27.0", default-features = false, features = ["with-codec"] }
-frame-benchmarking = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "frontier", default-features = false, optional = true }
+bytes = { version = "1.2.1", default-features = false }
+fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c", default-features = false, features = ["with-codec"] }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false, optional = true }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+
+[dev-dependencies]
+pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vector-support" }
 
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '2.0.0'
+version = '3.2.1'
 
 [dependencies.serde]
 features = ['derive']
@@ -25,20 +30,18 @@ version = '1.0.119'
 
 [dependencies.frame-support]
 default-features = false
-# version = '3.0.0'
 git = "https://github.com/paritytech/substrate.git"
-branch = "frontier"
+branch = "polkadot-v0.9.28"
 
 [dependencies.sp-io]
 default-features = false
-# version = '3.0.0'
 git = "https://github.com/paritytech/substrate.git"
-branch = "frontier"
+branch = "polkadot-v0.9.28"
 
 [dependencies.frame-metadata]
+version = "15.0.0"
 default-features = false
-git = "https://github.com/paritytech/substrate.git"
-branch = "frontier"
+features = ["v14"]
 
 [dependencies.sp-std]
 default-features = false
@@ -48,14 +51,13 @@ branch = "frontier"
 
 [dependencies.sp-core]
 default-features = false
-# version = '3.0.0'
 git = "https://github.com/paritytech/substrate.git"
-branch = "frontier"
+branch = "polkadot-v0.9.28"
 
 [dependencies.frame-system]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "frontier"
+branch = "polkadot-v0.9.28"
 
 [dependencies.pallet-evm]
 path = "../.."
@@ -64,16 +66,15 @@ default-features = false
 [dependencies.pallet-timestamp]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "frontier"
+branch = "polkadot-v0.9.28"
 
 [dependencies.pallet-balances]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "frontier"
+branch = "polkadot-v0.9.28"
 
 [dependencies.pallet-ethereum]
 default-features = false
-version = "3.0.0-dev"
 path = "../../../ethereum"
 
 [features]
@@ -82,6 +83,7 @@ runtime-benchmarks = [
 	"frame-benchmarking",
 ]
 std = [
+    'bytes/std',
     'pallet-timestamp/std',
     'pallet-balances/std',
     'pallet-ethereum/std',
@@ -93,6 +95,7 @@ std = [
     'frame-metadata/std',
     'sp-std/std',
     'pallet-evm/std',
+    'scale-info/std',
     'fp-evm/std',
     'evm/std',
     'codec/std',
