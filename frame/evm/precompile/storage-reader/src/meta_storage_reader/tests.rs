@@ -47,24 +47,22 @@ impl From<codec::Error> for ErrorWrapper {
 macro_rules! assert_decoded_eq {
 	($expr: expr, $val: expr) => {{
 		assert_eq!(
-			$expr
-				.map_err(ErrorWrapper::Execution)
-				.and_then(
-					|PrecompileOutput {
-					     output,
-					     exit_status,
-					     ..
-					 }| {
-						assert_eq!(exit_status, ExitSucceed::Returned);
+			$expr.map_err(ErrorWrapper::Execution).and_then(
+				|PrecompileOutput {
+				     output,
+				     exit_status,
+				     ..
+				 }| {
+					assert_eq!(exit_status, ExitSucceed::Returned);
 
-						let raw = RawStorageValue::decode_from_bytes(&output[..]);
-						raw.into_item()
-							.map(|bytes| {
-								Decode::decode(&mut &bytes[..]).map_err(ErrorWrapper::Decoding)
-							})
-							.transpose()
-					}
-				),
+					let raw = RawStorageValue::decode_from_bytes(&output[..]);
+					raw.into_item()
+						.map(|bytes| {
+							Decode::decode(&mut &bytes[..]).map_err(ErrorWrapper::Decoding)
+						})
+						.transpose()
+				}
+			),
 			$val
 		);
 	}};
@@ -471,13 +469,8 @@ fn costs() {
 		let input =
 			MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, Params::None);
 
-        let mut handle = MockHandle::new(
-			input.encode(),
-			Some(30_000_000),
-			DUMMY_CTX.clone(),
-		);
-		let res = MetaStorageReader::<Runtime>::execute(&mut handle)
-		.unwrap();
+		let mut handle = MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone());
+		let res = MetaStorageReader::<Runtime>::execute(&mut handle).unwrap();
 		let entry_meta = <Runtime as PalletStorageMetadataProvider>::pallet_storage_entry_metadata(
 			"TestStorage",
 			"SingleDefault",
@@ -498,11 +491,7 @@ fn costs() {
 		let input =
 			MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, Params::Len(100));
 
-        let mut handle = MockHandle::new(
-			input.encode(),
-			Some(30_000_000),
-			DUMMY_CTX.clone(),
-		);
+		let mut handle = MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone());
 		let res = MetaStorageReader::<Runtime>::execute(&mut handle).unwrap();
 		assert_eq!(
 			handle.gas_used,

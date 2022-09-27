@@ -133,13 +133,12 @@ fn cost() {
 		];
 
 		let input = RawStorageReaderInput::new(&raw_key[..], Params::None);
-        let mut handle = MockHandle::new(
+		let mut handle = MockHandle::new(
 			input.encode(),
 			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000_000),
 			DUMMY_CTX.clone(),
 		);
-		let out = RawStorageReader::<Runtime>::execute(&mut handle)
-		.unwrap();
+		let out = RawStorageReader::<Runtime>::execute(&mut handle).unwrap();
 
 		assert_eq!(
 			handle.gas_used,

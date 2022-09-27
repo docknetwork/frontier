@@ -44,7 +44,7 @@ mod weights;
 ///     - any value rather than 0 will be treated as a MapKey (`Map`, `DoubleMap` etc entities access)
 /// - encoded keys
 ///     - nothing for NoKey
-///     - sequence of keys each of which is represented as its compact encoded length followed by bytes for MapKey 
+///     - sequence of keys each of which is represented as its compact encoded length followed by bytes for MapKey
 /// - byte representing params: 0 - no additional params, 1 - offset, 2 - length, 3 - offset and length
 /// - the corresponding compact encoded offset, length or offset followed by length
 #[derive(Default, Debug)]

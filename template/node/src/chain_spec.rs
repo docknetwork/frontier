@@ -128,10 +128,10 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 }
 
 macro_rules! h256 {
-    ($val: expr) => {{
-        let bytes: [u8; 32] = sp_core::U256::from($val).into();
-        sp_core::H256(bytes)
-    }};
+	($val: expr) => {{
+		let bytes: [u8; 32] = sp_core::U256::from($val).into();
+		sp_core::H256(bytes)
+	}};
 }
 
 /// Configure initial storage state for FRAME modules.
