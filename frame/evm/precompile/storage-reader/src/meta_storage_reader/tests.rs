@@ -492,7 +492,7 @@ fn costs() {
 			MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, Params::Len(100));
 
 		let mut handle = MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone());
-		let res = MetaStorageReader::<Runtime>::execute(&mut handle).unwrap();
+		MetaStorageReader::<Runtime>::execute(&mut handle).unwrap();
 		assert_eq!(
 			handle.gas_used,
 			MetaStorageReader::<Runtime>::base_gas_cost(
