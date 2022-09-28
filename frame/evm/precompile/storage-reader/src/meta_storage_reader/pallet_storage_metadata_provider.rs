@@ -20,13 +20,12 @@ pub trait PalletStorageMetadataProvider {
 	}
 }
 
+/// Implements `PalletStorageMetadataProvider` for the provided identifier.
 #[macro_export]
 macro_rules! impl_pallet_storage_metadata_provider {
     (for $name: ident: $($pallet_name: literal => $pallet: ident),+) => {
-        use $crate::frame_metadata::PalletStorageMetadata;
-
         impl $crate::meta_storage_reader::PalletStorageMetadataProvider for $name {
-            fn pallet_storage_metadata(pallet: &str) -> Option<PalletStorageMetadata> {
+            fn pallet_storage_metadata(pallet: &str) -> Option<$crate::frame_metadata::PalletStorageMetadata> {
                 match pallet {
                     $($pallet_name => Some($pallet::storage_metadata())),+
                     ,_ => None
