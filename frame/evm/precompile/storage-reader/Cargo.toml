@@ -21,7 +21,7 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "../../test-vec
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '3.2.1'
+version = '3.0.0'
 
 [dependencies.serde]
 features = ['derive']
