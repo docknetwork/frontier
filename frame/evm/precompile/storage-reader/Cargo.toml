@@ -11,7 +11,7 @@ targets = ['x86_64-unknown-linux-gnu']
 bytes = { version = "1.2.1", default-features = false }
 fp-evm = { version = "3.0.0-dev", default-features = false, path = "../../../../primitives/evm" }
 evm = { git = "https://github.com/rust-blockchain/evm", rev = "51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c", default-features = false, features = ["with-codec"] }
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false, optional = true }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30", default-features = false, optional = true }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
@@ -31,12 +31,12 @@ version = '1.0.119'
 [dependencies.frame-support]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "polkadot-v0.9.28"
+branch = "polkadot-v0.9.30"
 
 [dependencies.sp-io]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "polkadot-v0.9.28"
+branch = "polkadot-v0.9.30"
 
 [dependencies.frame-metadata]
 version = "15.0.0"
@@ -46,17 +46,17 @@ features = ["v14"]
 [dependencies.sp-std]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "polkadot-v0.9.28"
+branch = "polkadot-v0.9.30"
 
 [dependencies.sp-core]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "polkadot-v0.9.28"
+branch = "polkadot-v0.9.30"
 
 [dependencies.frame-system]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "polkadot-v0.9.28"
+branch = "polkadot-v0.9.30"
 
 [dependencies.pallet-evm]
 path = "../.."
@@ -65,12 +65,12 @@ default-features = false
 [dependencies.pallet-timestamp]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "polkadot-v0.9.28"
+branch = "polkadot-v0.9.30"
 
 [dependencies.pallet-balances]
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
-branch = "polkadot-v0.9.28"
+branch = "polkadot-v0.9.30"
 
 [dependencies.pallet-ethereum]
 default-features = false
