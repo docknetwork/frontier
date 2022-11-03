@@ -26,6 +26,19 @@ use ethereum_types::{H160, H256, U256};
 use fp_evm::CheckEvmTransactionInput;
 use sp_std::vec::Vec;
 
+#[repr(u8)]
+#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive)]
+pub enum TransactionValidationError {
+	#[allow(dead_code)]
+	#[num_enum(default)]
+	UnknownError,
+	InvalidChainId,
+	InvalidSignature,
+	GasLimitTooLow,
+	GasLimitTooHigh,
+	MaxFeePerGasTooLow,
+}
+
 pub trait ValidatedTransaction {
 	fn apply(
 		source: H160,
@@ -33,7 +46,7 @@ pub trait ValidatedTransaction {
 	) -> frame_support::dispatch::DispatchResultWithPostInfo;
 }
 
-#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
 pub struct TransactionData {
 	pub action: TransactionAction,
 	pub input: Vec<u8>,

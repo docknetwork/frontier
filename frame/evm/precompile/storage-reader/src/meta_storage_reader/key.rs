@@ -3,7 +3,7 @@ use core::iter::once;
 use super::utils::{hash_bytes_with, hasher_weight};
 use codec::{Decode, Encode};
 use frame_metadata::{StorageEntryType, StorageHasher};
-use frame_support::{sp_runtime::traits::Saturating, weights::Weight, StorageHasher as _, Twox128};
+use frame_support::{weights::Weight, StorageHasher as _, Twox128};
 use sp_std::prelude::*;
 
 /// Key that can be hashed according to the provided metadata.
@@ -118,7 +118,7 @@ impl HashableKey for NoKey {
 
 	fn hashing_weight(&self, entry_type: &StorageEntryType) -> Option<Weight> {
 		match entry_type {
-			StorageEntryType::Plain(_) => Some(0),
+			StorageEntryType::Plain(_) => Some(Weight::zero()),
 			_ => None,
 		}
 	}
@@ -148,7 +148,7 @@ impl HashableKey for MapKey {
 					.map(Vec::len)
 					.zip(hashers)
 					.map(|(len, hasher)| hasher_weight(hasher, len))
-					.fold(0, |acc, cur| acc.saturating_add(cur))
+					.fold(Weight::zero(), |acc, cur| acc.saturating_add(cur))
 			}),
 			_ => None,
 		}

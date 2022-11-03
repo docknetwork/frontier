@@ -90,7 +90,7 @@ pub mod test_storage {
 	}
 
 	decl_module! {
-		pub struct Module<T: Config> for enum Call where origin: T::Origin {}
+		pub struct Module<T: Config> for enum Call where origin: T::RuntimeOrigin {}
 	}
 }
 
@@ -111,7 +111,8 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 construct_runtime! {
 	pub enum Runtime where
@@ -139,7 +140,7 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = ();
 	type MaxLocks = ();
 	type Balance = u64;
-	type Event = ();
+	type RuntimeEvent = ();
 	type DustRemoval = ();
 	type ExistentialDeposit = ();
 	type AccountStore = System;
@@ -167,18 +168,20 @@ where
 }
 
 parameter_types! {
-	pub const ByteReadWeight: Weight = 10;
+	pub ByteReadWeight: Weight = Weight::from_ref_time(10);
+	pub const WeightPerGas: Weight = Weight::from_ref_time(1_000);
 }
 
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = ();
-	type GasWeightMapping = ();
+	type WeightPerGas = WeightPerGas;
+	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = pallet_evm::EnsureAddressRoot<H160>;
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<H160>;
 	type AddressMapping = pallet_evm::IdentityAddressMapping;
 	type Currency = Balances;
-	type Event = ();
+	type RuntimeEvent = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type ByteReadWeight = ByteReadWeight;
 	type ChainId = ();
@@ -196,16 +199,16 @@ impl frame_system::Config for Runtime {
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = RocksDbWeight;
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type Hashing = BlakeTwo256;
 	type AccountId = H160;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = generic::Header<u64, BlakeTwo256>;
-	type Event = ();
+	type RuntimeEvent = ();
 	type BlockHashCount = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;

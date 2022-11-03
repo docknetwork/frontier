@@ -37,7 +37,7 @@ fn raw_access() {
 		let input = RawStorageReaderInput::new(&raw_key[..], Params::None);
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
-			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000_000),
+			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
 			DUMMY_CTX.clone(),
 		))
 		.unwrap();
@@ -53,7 +53,7 @@ fn raw_access() {
 		let input = RawStorageReaderInput::new(non_existent_key, Params::None);
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
-			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000_000),
+			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
 			DUMMY_CTX.clone(),
 		))
 		.unwrap();
@@ -75,7 +75,7 @@ fn raw_access_with_params() {
 		let input = RawStorageReaderInput::new(&raw_key[..], Params::Offset(10));
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
-			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000_000),
+			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
 			DUMMY_CTX.clone(),
 		))
 		.unwrap();
@@ -89,7 +89,7 @@ fn raw_access_with_params() {
 		let input = RawStorageReaderInput::new(&raw_key[..], Params::Len(10));
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
-			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000_000),
+			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
 			DUMMY_CTX.clone(),
 		))
 		.unwrap();
@@ -109,7 +109,7 @@ fn raw_access_with_params() {
 		);
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
-			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000_000),
+			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
 			DUMMY_CTX.clone(),
 		))
 		.unwrap();
@@ -135,19 +135,23 @@ fn cost() {
 		let input = RawStorageReaderInput::new(&raw_key[..], Params::None);
 		let mut handle = MockHandle::new(
 			input.encode(),
-			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000_000),
+			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
 			DUMMY_CTX.clone(),
 		);
 		let out = RawStorageReader::<Runtime>::execute(&mut handle).unwrap();
 
 		assert_eq!(
 			handle.gas_used,
-			<Runtime as frame_system::Config>::DbWeight::get().reads(1)
-				+ <Runtime as pallet_evm::Config>::ByteReadWeight::get()
-					* (out.output.len() as u64 - 1)
+			<Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
+				<Runtime as frame_system::Config>::DbWeight::get().reads(1)
+					+ <Runtime as pallet_evm::Config>::ByteReadWeight::get()
+						* (out.output.len() as u64 - 1)
+			)
 		);
 
-		let invalid_cost = <Runtime as frame_system::Config>::DbWeight::get().reads(1);
+		let invalid_cost = <Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
+			<Runtime as frame_system::Config>::DbWeight::get().reads(1),
+		);
 		assert_noop!(
 			RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
