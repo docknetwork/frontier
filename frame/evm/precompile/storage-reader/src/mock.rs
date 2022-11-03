@@ -12,7 +12,7 @@ use frame_support::{
 	weights::constants::RocksDbWeight,
 };
 use frame_system::{Config, RawOrigin};
-use pallet_evm::EnsureAddressOrigin;
+use pallet_evm::{EnsureAddressOrigin, GasWeightMapping};
 use sp_core::{ecdsa::Signature, hexdisplay::AsBytesRef, H160, H256};
 use sp_std::prelude::*;
 
@@ -170,9 +170,20 @@ parameter_types! {
 	pub const ByteReadWeight: Weight = 10;
 }
 
+pub struct GasWeightMappingx1000;
+
+impl GasWeightMapping for GasWeightMappingx1000 {
+	fn gas_to_weight(gas: u64) -> Weight {
+		gas.saturating_mul(1_000)
+	}
+	fn weight_to_gas(weight: Weight) -> u64 {
+		weight.saturating_div(1_000)
+	}
+}
+
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = ();
-	type GasWeightMapping = ();
+	type GasWeightMapping = GasWeightMappingx1000;
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = pallet_evm::EnsureAddressRoot<H160>;
 	type WithdrawOrigin = pallet_evm::EnsureAddressNever<H160>;

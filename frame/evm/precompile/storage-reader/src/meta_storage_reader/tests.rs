@@ -81,7 +81,7 @@ fn invalid_input() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Err::<Option<Bytes>, _>(
@@ -93,7 +93,7 @@ fn invalid_input() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Err::<Option<Bytes>, _>(
@@ -105,7 +105,7 @@ fn invalid_input() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Err::<Option<Bytes>, _>(PrecompileFailure::from(super::Error::InvalidKey).into())
@@ -120,7 +120,7 @@ fn invalid_input() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Err::<Option<Bytes>, _>(PrecompileFailure::from(super::Error::InvalidKey).into())
@@ -137,7 +137,7 @@ fn entity_access() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(Bytes::default()))
@@ -147,7 +147,7 @@ fn entity_access() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(None::<Bytes>)
@@ -157,7 +157,7 @@ fn entity_access() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(Bytes::with_len(123)))
@@ -174,7 +174,7 @@ fn large_entity_access() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Err::<Option<LargeBytes>, _>(ExitError::OutOfGas.into())
@@ -183,7 +183,7 @@ fn large_entity_access() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(100_000_000),
+				Some(100_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(LargeBytes::default()))
@@ -194,7 +194,7 @@ fn large_entity_access() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(100_000_000),
+				Some(100_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(LargeBytes(Bytes::with_len(700))))
@@ -255,7 +255,7 @@ fn map_access() {
                     Params::None,
                 );
                 assert_decoded_eq!(
-                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone())),
+                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
                     Ok(Some(Bytes::from_to(100, 1000)))
                 );
 
@@ -264,7 +264,7 @@ fn map_access() {
                         &mut MockHandle::new(
                         input
                             .with_replaced_key(MapKey::new_single(Bytes(name.as_bytes().to_vec())))
-                            .encode(), Some(30_000_000), DUMMY_CTX.clone())
+                            .encode(), Some(30_000), DUMMY_CTX.clone())
                     ),
                     Ok(Some(Bytes(name.as_bytes().to_vec())))
                 );
@@ -274,7 +274,7 @@ fn map_access() {
                     MetaStorageReader::<Runtime>::execute(
                         &mut MockHandle::new(input
                             .with_replaced_key(MapKey::new_single(non_existent_key))
-                            .encode(), Some(30_000_000), DUMMY_CTX.clone())
+                            .encode(), Some(30_000), DUMMY_CTX.clone())
                     ),
                     Ok(None::<Bytes>)
                 );
@@ -303,7 +303,7 @@ fn map_access_with_params() {
                     Params::Len(4),
                 );
                 assert_decoded_eq!(
-                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone())),
+                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
                     Ok(Some(CompactU32(900)))
                 );
 
@@ -314,7 +314,7 @@ fn map_access_with_params() {
                     Params::Offset(10),
                 );
                 assert_decoded_eq!(
-                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone())),
+                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
                     Ok(Some(RawBytes(Bytes::from_to(108, 1000))))
                 );
 
@@ -325,7 +325,7 @@ fn map_access_with_params() {
                     Params::OffsetAndLen { offset: 10, len: 50 },
                 );
                 assert_decoded_eq!(
-                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone())),
+                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
                     Ok(Some(RawBytes(Bytes::from_to(108, 158))))
                 );
             }
@@ -351,7 +351,7 @@ fn double_map_access() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(Bytes::with_len(30)))
@@ -363,7 +363,7 @@ fn double_map_access() {
 				input
 					.with_replaced_key(MapKey::new_double(non_existent_key, Bytes::with_len(20)))
 					.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(None::<Bytes>)
@@ -378,7 +378,7 @@ fn double_map_access() {
 						non_existent_second_key
 					))
 					.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(None::<Bytes>)
@@ -394,7 +394,7 @@ fn double_map_access() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(Bytes::default()))
@@ -419,7 +419,7 @@ fn double_map_access_with_params() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(RawBytes(Bytes::from_to(108, 1000))))
@@ -437,7 +437,7 @@ fn double_map_access_with_params() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(RawBytes(Bytes::from_to(108, 118))))
@@ -455,7 +455,7 @@ fn double_map_access_with_params() {
 		assert_decoded_eq!(
 			MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
-				Some(30_000_000),
+				Some(30_000),
 				DUMMY_CTX.clone()
 			)),
 			Ok(Some(RawBytes(Bytes(CompactU32(900).encode()))))
@@ -469,7 +469,7 @@ fn costs() {
 		let input =
 			MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, Params::None);
 
-		let mut handle = MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone());
+		let mut handle = MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone());
 		let res = MetaStorageReader::<Runtime>::execute(&mut handle).unwrap();
 		let entry_meta = <Runtime as PalletStorageMetadataProvider>::pallet_storage_entry_metadata(
 			"TestStorage",
@@ -491,7 +491,7 @@ fn costs() {
 		let input =
 			MetaStorageReaderInput::new("TestStorage", "SingleDefault", NoKey, Params::Len(100));
 
-		let mut handle = MockHandle::new(input.encode(), Some(30_000_000), DUMMY_CTX.clone());
+		let mut handle = MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone());
 		MetaStorageReader::<Runtime>::execute(&mut handle).unwrap();
 		assert_eq!(
 			handle.gas_used,
