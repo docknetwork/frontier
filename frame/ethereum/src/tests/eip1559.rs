@@ -18,7 +18,10 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
-use frame_support::{traits::Get, weights::DispatchClass, weights::Weight};
+use frame_support::{
+	traits::Get,
+	weights::{DispatchClass, Weight},
+};
 use pallet_evm::GasWeightMapping;
 
 fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {

@@ -380,7 +380,15 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 		);
 		assert!(result.is_err());
 		// Some used weight is returned as part of the error.
-		assert_eq!(result.unwrap_err().post_info.actual_weight.unwrap().ref_time(), 7);
+		assert_eq!(
+			result
+				.unwrap_err()
+				.post_info
+				.actual_weight
+				.unwrap()
+				.ref_time(),
+			7
+		);
 	});
 }
 

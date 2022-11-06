@@ -22,7 +22,7 @@ mod validation;
 
 use codec::{Decode, Encode};
 pub use evm::ExitReason;
-use frame_support::{weights::Weight, sp_runtime::traits::Zero};
+use frame_support::{sp_runtime::traits::Zero, weights::Weight};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, U256};

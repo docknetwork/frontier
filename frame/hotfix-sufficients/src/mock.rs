@@ -15,9 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use frame_support::{parameter_types, traits::ConstU32};
+use frame_support::{pallet_prelude::Weight, parameter_types, traits::ConstU32};
 use sp_core::{H160, H256};
-use frame_support::pallet_prelude::Weight;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
