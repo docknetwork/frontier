@@ -17,6 +17,7 @@
 
 use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::{H160, H256};
+use frame_support::pallet_prelude::Weight;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -49,7 +50,7 @@ type Block = frame_system::mocking::MockBlock<Test>;
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
+		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
 }
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;

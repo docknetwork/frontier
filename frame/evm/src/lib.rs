@@ -118,7 +118,7 @@ pub mod pallet {
 		type BlockHashMapping: BlockHashMapping;
 
 		/// `ByteReadWeight`
-		type ByteReadWeight: Get<u64>;
+		type ByteReadWeight: Get<Weight>;
 
 		/// Allow the origin to call on behalf of given address.
 		type CallOrigin: EnsureAddressOrigin<Self::Origin>;
@@ -627,10 +627,10 @@ pub trait GasWeightMapping {
 
 impl GasWeightMapping for () {
 	fn gas_to_weight(gas: u64) -> Weight {
-		gas as Weight
+		Weight::from_ref_time(gas)
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
-		weight as u64
+		weight.ref_time()
 	}
 }
 

@@ -118,7 +118,7 @@ impl HashableKey for NoKey {
 
 	fn hashing_weight(&self, entry_type: &StorageEntryType) -> Option<Weight> {
 		match entry_type {
-			StorageEntryType::Plain(_) => Some(0),
+			StorageEntryType::Plain(_) => Some(Weight::zero()),
 			_ => None,
 		}
 	}
@@ -148,7 +148,7 @@ impl HashableKey for MapKey {
 					.map(Vec::len)
 					.zip(hashers)
 					.map(|(len, hasher)| hasher_weight(hasher, len))
-					.fold(0, |acc, cur| acc.saturating_add(cur))
+					.fold(Weight::zero(), |acc, cur| acc.saturating_add(cur))
 			}),
 			_ => None,
 		}

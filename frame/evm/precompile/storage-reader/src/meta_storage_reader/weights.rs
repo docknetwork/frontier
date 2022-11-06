@@ -51,61 +51,61 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn blake2_128(l: u32) -> Weight {
-		(767_000 as Weight)
+		Weight::from_ref_time(767_000 as u64)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(l as u64))
 	}
 	fn blake2_256(l: u32) -> Weight {
-		(771_000 as Weight)
+		Weight::from_ref_time(771_000 as u64)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(l as u64))
 	}
 	fn blake2_128_concat(l: u32) -> Weight {
-		(875_000 as Weight)
+		Weight::from_ref_time(875_000 as u64)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(l as u64))
 	}
 	fn twox_128(_l: u32) -> Weight {
-		(998_000 as Weight)
+		Weight::from_ref_time(998_000 as u64)
 	}
 	fn twox_256(_l: u32) -> Weight {
-		(996_000 as Weight)
+		Weight::from_ref_time(996_000 as u64)
 	}
 	fn twox_64_concat(_l: u32) -> Weight {
-		(982_000 as Weight)
+		Weight::from_ref_time(982_000 as u64)
 	}
 	fn identity(_l: u32) -> Weight {
-		(690_000 as Weight)
+		Weight::from_ref_time(690_000 as u64)
 	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	fn blake2_128(l: u32) -> Weight {
-		(767_000 as Weight)
+		Weight::from_ref_time(767_000 as u64)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(l as u64))
 	}
 	fn blake2_256(l: u32) -> Weight {
-		(771_000 as Weight)
+		Weight::from_ref_time(771_000 as u64)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(l as u64))
 	}
 	fn blake2_128_concat(l: u32) -> Weight {
-		(875_000 as Weight)
+		Weight::from_ref_time(875_000 as u64)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(l as Weight))
+			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(l as u64))
 	}
 	fn twox_128(_l: u32) -> Weight {
-		(998_000 as Weight)
+		Weight::from_ref_time(998_000 as u64)
 	}
 	fn twox_256(_l: u32) -> Weight {
-		(996_000 as Weight)
+		Weight::from_ref_time(996_000 as u64)
 	}
 	fn twox_64_concat(_l: u32) -> Weight {
-		(982_000 as Weight)
+		Weight::from_ref_time(982_000 as u64)
 	}
 	fn identity(_l: u32) -> Weight {
-		(690_000 as Weight)
+		Weight::from_ref_time(690_000 as u64)
 	}
 }

@@ -22,7 +22,7 @@ mod validation;
 
 use codec::{Decode, Encode};
 pub use evm::ExitReason;
-use frame_support::weights::Weight;
+use frame_support::{weights::Weight, sp_runtime::traits::Zero};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, U256};
@@ -92,6 +92,6 @@ pub trait FeeCalculator {
 
 impl FeeCalculator for () {
 	fn min_gas_price() -> (U256, Weight) {
-		(U256::zero(), 0u64)
+		(U256::zero(), Weight::zero())
 	}
 }

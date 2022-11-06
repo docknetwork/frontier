@@ -167,17 +167,17 @@ where
 }
 
 parameter_types! {
-	pub const ByteReadWeight: Weight = 10;
+	pub const ByteReadWeight: Weight = Weight::from_ref_time(10);
 }
 
 pub struct GasWeightMappingx1000;
 
 impl GasWeightMapping for GasWeightMappingx1000 {
 	fn gas_to_weight(gas: u64) -> Weight {
-		gas.saturating_mul(1_000)
+		Weight::from_ref_time(gas.saturating_mul(1_000))
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
-		weight.saturating_div(1_000)
+		weight.ref_time().saturating_div(1_000)
 	}
 }
 

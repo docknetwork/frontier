@@ -119,7 +119,7 @@ impl pallet_timestamp::Config for Test {
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
 	fn min_gas_price() -> (U256, Weight) {
-		(1.into(), 0u64)
+		(1.into(), Weight::zero())
 	}
 }
 
@@ -138,7 +138,7 @@ parameter_types! {
 	pub const ChainId: u64 = 42;
 	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
 	pub const BlockGasLimit: U256 = U256::MAX;
-	pub const ByteReadWeight: Weight = 10;
+	pub const ByteReadWeight: Weight = Weight::from_ref_time(10);
 }
 
 pub struct HashedAddressMapping;
