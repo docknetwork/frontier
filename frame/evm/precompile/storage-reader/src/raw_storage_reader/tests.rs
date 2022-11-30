@@ -10,7 +10,7 @@ use crate::common::params::Params;
 use super::*;
 use crate::mock::{test_storage::*, *};
 
-static DUMMY_CTX: &'static evm::Context = &evm::Context {
+const DUMMY_CTX: evm::Context = evm::Context {
 	address: H160([0; 20]),
 	caller: H160([0; 20]),
 	apparent_value: U256([0; 4]),
@@ -38,7 +38,7 @@ fn raw_access() {
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
 			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
-			DUMMY_CTX.clone(),
+			DUMMY_CTX,
 		))
 		.unwrap();
 
@@ -54,7 +54,7 @@ fn raw_access() {
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
 			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
-			DUMMY_CTX.clone(),
+			DUMMY_CTX,
 		))
 		.unwrap();
 
@@ -76,7 +76,7 @@ fn raw_access_with_params() {
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
 			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
-			DUMMY_CTX.clone(),
+			DUMMY_CTX,
 		))
 		.unwrap();
 
@@ -90,7 +90,7 @@ fn raw_access_with_params() {
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
 			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
-			DUMMY_CTX.clone(),
+			DUMMY_CTX,
 		))
 		.unwrap();
 
@@ -110,7 +110,7 @@ fn raw_access_with_params() {
 		let out = RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 			input.encode(),
 			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
-			DUMMY_CTX.clone(),
+			DUMMY_CTX,
 		))
 		.unwrap();
 
@@ -136,7 +136,7 @@ fn cost() {
 		let mut handle = MockHandle::new(
 			input.encode(),
 			Some(RawStorageReader::<Runtime>::base_gas_cost() + 5_000),
-			DUMMY_CTX.clone(),
+			DUMMY_CTX,
 		);
 		let out = RawStorageReader::<Runtime>::execute(&mut handle).unwrap();
 
@@ -156,7 +156,7 @@ fn cost() {
 			RawStorageReader::<Runtime>::execute(&mut MockHandle::new(
 				input.encode(),
 				Some(invalid_cost),
-				DUMMY_CTX.clone()
+				DUMMY_CTX
 			)),
 			evm::ExitError::OutOfGas
 		);

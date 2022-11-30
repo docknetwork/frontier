@@ -107,7 +107,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
 
 		let entry_meta = T::pallet_storage_entry_metadata(&pallet, &entry)
 			.ok_or(Error::PalletStorageEntryNotFound)?;
-		let default_byte_getter =
+		let default_bytes =
 			(entry_meta.modifier == StorageEntryModifier::Default).then(|| entry_meta.default);
 
 		let base_gas_cost = Self::base_gas_cost(&pallet, &entry, &key, &entry_meta.ty)?;
@@ -117,7 +117,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
 			.to_pallet_entry_storage_key(&pallet, &entry, &entry_meta.ty)
 			.ok_or(Error::InvalidKey)?;
 
-		let raw_output = RawStorageReader::<T>::read(&storage_key).or_default(default_byte_getter);
+		let raw_output = RawStorageReader::<T>::read(&storage_key).or_default(default_bytes);
 
 		let total_gas_cost = base_gas_cost.saturating_add(Self::output_gas_cost(raw_output.len()));
 		crate::ensure_enough_gas!(target_gas >= total_gas_cost);
