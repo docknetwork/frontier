@@ -867,7 +867,7 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, pallet_evm, PalletEvmBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_evm_precompile_storage_reader, pallet_evm_precompile_storage_reader::meta_storage_reader::benchmarks::Module::<Runtime>);
+			add_benchmark!(params, batches, pallet_evm_precompile_storage_reader, pallet_evm_precompile_storage_reader::meta_storage_reader::benchmarks::Pallet::<Runtime>);
 			add_benchmark!(params, batches, pallet_hotfix_sufficients, PalletHotfixSufficients::<Runtime>);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
