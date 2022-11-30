@@ -1,12 +1,12 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 //! Benchmarking
-use crate::meta_storage_reader::hash_bytes_with;
+use super::utils::hash_bytes_with;
 use frame_benchmarking::benchmarks;
 use frame_metadata::StorageHasher;
 use sp_std::prelude::*;
 
-pub struct Module<T: pallet_evm::Config>(pallet_evm::Module<T>);
+pub struct Pallet<T: pallet_evm::Config>(pallet_evm::Pallet<T>);
 
 pub trait Config: pallet_evm::Config {}
 
