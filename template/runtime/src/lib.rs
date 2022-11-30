@@ -322,7 +322,7 @@ impl GasWeightMapping for FixedGasWeightMapping {
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::from((NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS).ref_time());
 	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
-	pub const ByteReadWeight: Weight = Weight::from_ref_time(10);
+	pub const ByteReadWeight: Weight = Weight::from_ref_time(100);
 }
 
 pallet_evm_precompile_storage_reader::impl_pallet_storage_metadata_provider!(

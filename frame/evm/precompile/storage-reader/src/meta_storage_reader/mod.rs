@@ -66,12 +66,12 @@ mod weights;
 ///
 /// # assert_eq!(
 /// vec![
-///    44, // - length("TestStorage) << 2,              
-///    84, 101, 115, 116, 83, 116, 111, 114, 97, 103, 101, // - "TestStorage" as bytes (UTF-8), 	           
-///    68, // - length("MapWithBlake2_128) << 2,            	     
-///    77, 97, 112, 87, 105, 116, 104, 66, 108, 97, 107, 101, 50, 95, 49, 50, 56, // - "MapWithBlake2_128" as bytes (UTF-8),              
-///    1, // - Map key will be provided					   
-///    44, // - length(key bytes) << 2,			   
+///    44, // - length("TestStorage) << 2,
+///    84, 101, 115, 116, 83, 116, 111, 114, 97, 103, 101, // - "TestStorage" as bytes (UTF-8),
+///    68, // - length("MapWithBlake2_128) << 2,
+///    77, 97, 112, 87, 105, 116, 104, 66, 108, 97, 107, 101, 50, 95, 49, 50, 56, // - "MapWithBlake2_128" as bytes (UTF-8),
+///    1, // - Map key will be provided
+///    44, // - length(key bytes) << 2,
 ///    40, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, // - Key bytes: length(raw bytes) << 2 followed by raw bytes
 ///    1, // - Offset param will be used,
 ///    40 // - Offset value (10 << 2)
