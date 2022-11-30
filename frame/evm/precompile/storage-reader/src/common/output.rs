@@ -6,7 +6,9 @@ use super::params::Params;
 /// Represents raw value read from the storage.
 #[derive(Debug, Clone)]
 pub enum RawStorageValue {
+	/// Item isn't found.
 	None,
+	/// Item is present.
 	Item(Bytes),
 }
 
@@ -46,7 +48,7 @@ impl RawStorageValue {
 		}
 	}
 
-	/// If value is absent, attempts to replace it with default value provided by supplied getter.
+	/// If value is absent, attempts to replace it with provided bytes.
 	pub fn or_default(self, default_bytes: Option<Vec<u8>>) -> Self {
 		match self {
 			Self::None => default_bytes.map(Into::into).into(),

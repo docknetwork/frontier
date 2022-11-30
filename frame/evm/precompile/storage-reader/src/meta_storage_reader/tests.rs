@@ -308,11 +308,11 @@ fn map_access_with_params() {
                 );
 
                 let input = MetaStorageReaderInput::new(
-                    "TestStorage",
-                    name,
-                    MapKey::new_single(Bytes::with_len(10)),
-                    Params::Offset(10),
-                );
+					"TestStorage",
+					"MapWithBlake2_128",
+					MapKey::new_single((0u8..10).collect::<Vec<_>>()),
+					Params::Offset(10),
+				);
                 assert_decoded_eq!(
                     MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
                     Ok(Some(RawBytes(Bytes::from_to(108, 1000))))
@@ -327,6 +327,39 @@ fn map_access_with_params() {
                 assert_decoded_eq!(
                     MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
                     Ok(Some(RawBytes(Bytes::from_to(108, 158))))
+                );
+
+				let input = MetaStorageReaderInput::new(
+                    "TestStorage",
+                    name,
+                    MapKey::new_single(Bytes::with_len(10)),
+                    Params::Len(100_000_000),
+                );
+                assert_decoded_eq!(
+                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
+                    Ok(Some(Bytes::from_to(100, 1000)))
+                );
+
+				let input = MetaStorageReaderInput::new(
+                    "TestStorage",
+                    name,
+                    MapKey::new_single(Bytes::with_len(10)),
+                    Params::Offset(100_000_000),
+                );
+                assert_decoded_eq!(
+                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
+                    Ok(Some(RawBytes(Bytes::from_to(0, 0))))
+                );
+
+				let input = MetaStorageReaderInput::new(
+                    "TestStorage",
+                    name,
+                    MapKey::new_single(Bytes::with_len(10)),
+                    Params::OffsetAndLen { offset: 10_000_000, len: 10_000_000 }
+                );
+                assert_decoded_eq!(
+                    MetaStorageReader::<Runtime>::execute(&mut MockHandle::new(input.encode(), Some(30_000), DUMMY_CTX.clone())),
+					Ok(Some(RawBytes(Bytes::from_to(0, 0))))
                 );
             }
         );

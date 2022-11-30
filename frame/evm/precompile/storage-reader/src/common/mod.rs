@@ -1,6 +1,7 @@
 pub mod output;
 pub mod params;
 
+/// Ensures that caller has enough gas, producing `ExitError::OutOfGas` in case of failure.
 #[macro_export]
 macro_rules! ensure_enough_gas {
 	($target_gas: ident >= $gas_required: ident) => {

@@ -3,7 +3,7 @@ use core::iter::once;
 use super::utils::{hash_bytes_with, hasher_weight};
 use codec::{Decode, Encode};
 use frame_metadata::{StorageEntryType, StorageHasher};
-use frame_support::{sp_runtime::traits::Saturating, weights::Weight, StorageHasher as _, Twox128};
+use frame_support::{weights::Weight, StorageHasher as _, Twox128};
 use sp_std::prelude::*;
 
 /// Key that can be hashed according to the provided metadata.
@@ -100,9 +100,16 @@ impl Key {
 		entry: &str,
 		entry_type: &StorageEntryType,
 	) -> Option<Weight> {
-		let res = self.hashing_weight(entry_type)?
-			+ hasher_weight(&StorageHasher::Twox128, pallet.as_bytes().len())
-			+ hasher_weight(&StorageHasher::Twox128, entry.as_bytes().len());
+		let res = self
+			.hashing_weight(entry_type)?
+			.saturating_add(hasher_weight(
+				&StorageHasher::Twox128,
+				pallet.as_bytes().len(),
+			))
+			.saturating_add(hasher_weight(
+				&StorageHasher::Twox128,
+				entry.as_bytes().len(),
+			));
 
 		Some(res)
 	}
@@ -129,7 +136,7 @@ impl HashableKey for MapKey {
 		let Self(keys) = self;
 
 		match entry_type {
-			StorageEntryType::Map { hashers, .. } => (hashers.len() == self.0.len()).then(|| {
+			StorageEntryType::Map { hashers, .. } => (hashers.len() == keys.len()).then(|| {
 				keys.iter()
 					.zip(hashers)
 					.flat_map(|(bytes, hasher)| hash_bytes_with(bytes, hasher))
@@ -143,7 +150,7 @@ impl HashableKey for MapKey {
 		let Self(keys) = self;
 
 		match entry_type {
-			StorageEntryType::Map { hashers, .. } => (hashers.len() == self.0.len()).then(|| {
+			StorageEntryType::Map { hashers, .. } => (hashers.len() == keys.len()).then(|| {
 				keys.iter()
 					.map(Vec::len)
 					.zip(hashers)

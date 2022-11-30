@@ -47,6 +47,38 @@ mod weights;
 ///     - sequence of keys each of which is represented as its compact encoded length followed by bytes for MapKey
 /// - byte representing params: 0 - no additional params, 1 - offset, 2 - length, 3 - offset and length
 /// - the corresponding compact encoded offset, length or offset followed by length
+///
+/// # Example call
+///
+/// ```rust
+///  # use codec::{Encode, Decode};
+///  # use pallet_evm_precompile_storage_reader::meta_storage_reader::{key::MapKey, input::MetaStorageReaderInput};
+///  # use pallet_evm_precompile_storage_reader::params::Params;
+///  # let input =
+///  MetaStorageReaderInput::new(
+///		"TestStorage",
+///		"MapWithBlake2_128",
+///		MapKey::new_single((0u8..10).collect::<Vec<_>>()),
+///		Params::Offset(10),
+///	 );
+///
+/// // will be encoded as the following sequence of bytes
+///
+/// # assert_eq!(
+/// vec![
+///    44, // - length("TestStorage) << 2,              
+///    84, 101, 115, 116, 83, 116, 111, 114, 97, 103, 101, // - "TestStorage" as bytes (UTF-8), 	           
+///    68, // - length("MapWithBlake2_128) << 2,            	     
+///    77, 97, 112, 87, 105, 116, 104, 66, 108, 97, 107, 101, 50, 95, 49, 50, 56, // - "MapWithBlake2_128" as bytes (UTF-8),              
+///    1, // - Map key will be provided					   
+///    44, // - length(key bytes) << 2,			   
+///    40, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, // - Key bytes: length(raw bytes) << 2 followed by raw bytes
+///    1, // - Offset param will be used,
+///    40 // - Offset value (10 << 2)
+/// ],
+/// # input.encode());
+/// ```
+///
 #[derive(Default, Debug)]
 pub struct MetaStorageReader<T>(PhantomData<T>);
 
