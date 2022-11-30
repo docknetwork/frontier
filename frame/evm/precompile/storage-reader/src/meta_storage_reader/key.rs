@@ -92,7 +92,7 @@ impl Key {
 		Some(final_key)
 	}
 
-	/// Calculates hash for converting to the full-featured hashed storage key with prefix.
+	/// Calculates hashing weight for converting to the full-featured hashed storage key with prefix.
 	/// Returns `None` if the key is incompatible with the provided metadata.
 	pub fn full_hashing_weight(
 		&self,

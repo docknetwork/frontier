@@ -28,6 +28,28 @@ use input::RawStorageReaderInput;
 /// - raw key bytes
 /// - byte representing params: 0 - no additional params, 1 - offset, 2 - length, 3 - offset and length
 /// - corresponding compact encoded offset, length or offset followed by length
+///
+/// # Example call
+///
+/// ```rust
+///  # use codec::{Encode, Decode};
+///  # use pallet_evm_precompile_storage_reader::raw_storage_reader::input::RawStorageReaderInput;
+///  # use pallet_evm_precompile_storage_reader::params::Params;
+///  # let input =
+///  RawStorageReaderInput::new(
+///		(0u8..10).collect::<Vec<_>>(),
+///		Params::Offset(10),
+///	 );
+///  // will be encoded as the following sequence of bytes
+///  # assert_eq!(
+///  vec![
+///     40, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, // - Key bytes: length(bytes) << 2 followed by bytes
+///     1, // - Offset param will be used
+///     40 // - Offset value (10 << 2)
+///  ]
+///  # , input.encode());
+/// ```
+///
 pub struct RawStorageReader<T>(PhantomData<T>);
 
 impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
