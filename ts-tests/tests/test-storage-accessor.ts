@@ -161,7 +161,7 @@ describeWithFrontier("Frontier RPC (Storage accessor)", (context) => {
 		});
 
 		let [success, rawData] = await contract.methods
-			.getStorageWithOffsetLen("EVM", "AccountCodes", 1, contractAddress, "0x", 2, 1000)
+			.getStorageWithOffsetAndLen("EVM", "AccountCodes", 1, contractAddress, "0x", 2, 1000)
 			.call();
 		expect(success).to.equal(true);
 		const buffer = Buffer.from(rawData.slice(2), "hex");
@@ -180,7 +180,7 @@ describeWithFrontier("Frontier RPC (Storage accessor)", (context) => {
 		});
 
 		let [success, rawData] = await contract.methods
-			.getStorageWithOffsetLen("EVM", "AccountCodes", 1, contractAddress, "0x", 2, 0)
+			.getStorageWithOffsetAndLen("EVM", "AccountCodes", 1, contractAddress, "0x", 2, 0)
 			.call();
 		expect(success).to.equal(true);
 		const [found] = Array.from(Buffer.from(rawData.slice(2), "hex"));
@@ -194,7 +194,7 @@ describeWithFrontier("Frontier RPC (Storage accessor)", (context) => {
 		});
 
 		let [success, rawData] = await contract.methods
-			.getStorageWithOffsetLen("EVM", "AccountCodes", 1, contractAddress, "0x", 20000, 10)
+			.getStorageWithOffsetAndLen("EVM", "AccountCodes", 1, contractAddress, "0x", 20000, 10)
 			.call();
 		expect(success).to.equal(true);
 		const [found] = Array.from(Buffer.from(rawData.slice(2), "hex"));
@@ -289,7 +289,7 @@ describeWithFrontier("Frontier RPC (Storage accessor)", (context) => {
 			gasPrice: "0x3B9ACA00",
 		});
 		let [success, rawData] = await contract.methods
-			.getStorageWithOffsetLen(
+			.getStorageWithOffsetAndLen(
 				"EVM",
 				"AccountStorages",
 				2,
