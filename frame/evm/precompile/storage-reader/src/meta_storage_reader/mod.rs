@@ -77,7 +77,7 @@ mod weights;
 ///  # , input.encode());
 /// ```
 ///
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct MetaStorageReader<T>(PhantomData<T>);
 
 impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaStorageReader<T> {
@@ -134,6 +134,7 @@ impl<T: pallet_evm::Config + PalletStorageMetadataProvider> Precompile for MetaS
 }
 
 impl<T: pallet_evm::Config> MetaStorageReader<T> {
+	/// Base gas cost for performing a single read operation based on input.
 	fn base_gas_cost(
 		pallet: &str,
 		entry: &str,
@@ -148,11 +149,13 @@ impl<T: pallet_evm::Config> MetaStorageReader<T> {
 			.saturating_add(RawStorageReader::<T>::base_gas_cost()))
 	}
 
+	/// Gas cost based on an output length.
 	fn output_gas_cost(output_len: usize) -> u64 {
 		RawStorageReader::<T>::output_gas_cost(output_len)
 	}
 }
 
+/// An error produced by the `MetaStorageReader`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
 	PalletStorageEntryNotFound,

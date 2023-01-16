@@ -55,8 +55,8 @@ macro_rules! assert_decoded_eq {
 				 }| {
 					assert_eq!(exit_status, ExitSucceed::Returned);
 
-					let raw = RawStorageValue::decode_from_bytes(&output[..]);
-					raw.into_item()
+					RawStorageValue::decode_from_bytes(&output[..])
+						.into_item()
 						.map(|bytes| {
 							Decode::decode(&mut &bytes[..]).map_err(ErrorWrapper::Decoding)
 						})

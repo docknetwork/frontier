@@ -3,7 +3,7 @@ use core::{convert::TryInto, num::NonZeroU32, ops::Range};
 use codec::{Decode, Encode};
 
 /// Input params allowing to specify offset and length for the raw value bytes.
-#[derive(Debug, Encode, Decode, Clone)]
+#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq)]
 pub enum Params {
 	/// No params specified.
 	None,

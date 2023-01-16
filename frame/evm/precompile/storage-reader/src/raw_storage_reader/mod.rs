@@ -50,6 +50,7 @@ use input::RawStorageReaderInput;
 ///  # , input.encode());
 /// ```
 ///
+#[derive(Default, Debug, Clone, Copy)]
 pub struct RawStorageReader<T>(PhantomData<T>);
 
 impl<T: pallet_evm::Config> Precompile for RawStorageReader<T> {
@@ -92,10 +93,12 @@ impl<T: pallet_evm::Config> RawStorageReader<T> {
 		sp_io::storage::get(&raw_key).into()
 	}
 
+	/// Base gas cost for performing a single read operation based on input.
 	pub(super) fn base_gas_cost() -> u64 {
 		T::GasWeightMapping::weight_to_gas(T::DbWeight::get().reads(1))
 	}
 
+	/// Gas cost based on an output length.
 	pub(super) fn output_gas_cost(output_len: usize) -> u64 {
 		T::GasWeightMapping::weight_to_gas(
 			T::ByteReadWeight::get().saturating_mul(output_len as u64),
@@ -103,6 +106,8 @@ impl<T: pallet_evm::Config> RawStorageReader<T> {
 	}
 }
 
+/// An error produced by the `RawStorageReader`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
 	Decoding(codec::Error),
 }
