@@ -21,15 +21,6 @@ impl RawStorageValue {
 		}
 	}
 
-	/// Attempts to convert `Self` into item.
-	/// If you need to encode the value to bytes, use `apply_params` and `encode_to_bytes` instead.
-	pub fn into_item(self) -> Option<Bytes> {
-		match self {
-			Self::None => None,
-			Self::Item(bytes) => Some(bytes),
-		}
-	}
-
 	/// If value is absent, attempts to replace it with provided bytes.
 	pub fn or_default(self, default_bytes: Option<Vec<u8>>) -> Self {
 		match self {
@@ -55,14 +46,6 @@ impl RawStorageValue {
 
 		OutputStorageValue(value)
 	}
-
-	/// Decodes `Self` from bytes.
-	pub fn decode_from_bytes(bytes: &[u8]) -> Self {
-		match bytes.get(0) {
-			Some(1) => RawStorageValue::Item(bytes[1..].to_vec().into()),
-			_ => RawStorageValue::None,
-		}
-	}
 }
 
 impl From<Option<Bytes>> for RawStorageValue {
@@ -76,6 +59,15 @@ impl From<Option<Bytes>> for RawStorageValue {
 pub struct OutputStorageValue(RawStorageValue);
 
 impl OutputStorageValue {
+	/// Attempts to convert `Self` into item.
+	/// If you need to encode the value to bytes, use `apply_params` and `encode_to_bytes` instead.
+	pub fn into_item(self) -> Option<Bytes> {
+		match self.0 {
+			RawStorageValue::None => None,
+			RawStorageValue::Item(bytes) => Some(bytes),
+		}
+	}
+
 	/// Encodes `Self` as bytes. The first byte is 0 or 1 depending on `self` being `None` or `Item`.
 	pub fn encode_to_bytes(&self) -> Vec<u8> {
 		let Self(raw_value) = self;
@@ -87,5 +79,15 @@ impl OutputStorageValue {
 		}
 
 		output
+	}
+
+	/// Decodes `Self` from bytes.
+	pub fn decode_from_bytes(bytes: &[u8]) -> Self {
+		let raw = match bytes.get(0) {
+			Some(1) => RawStorageValue::Item(bytes[1..].to_vec().into()),
+			_ => RawStorageValue::None,
+		};
+
+		OutputStorageValue(raw)
 	}
 }

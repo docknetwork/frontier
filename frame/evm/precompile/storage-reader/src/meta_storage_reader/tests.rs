@@ -2,7 +2,7 @@ use codec::{Decode, Encode};
 use fp_evm::Precompile;
 use frame_support::{StorageDoubleMap, StorageMap, StorageValue};
 
-use crate::common::output::RawStorageValue;
+use crate::common::output::OutputStorageValue;
 use pallet_evm_test_vector_support::MockHandle;
 use sp_core::{H160, U256};
 use sp_std::prelude::*;
@@ -55,7 +55,7 @@ macro_rules! assert_decoded_eq {
 				 }| {
 					assert_eq!(exit_status, ExitSucceed::Returned);
 
-					RawStorageValue::decode_from_bytes(&output[..])
+					OutputStorageValue::decode_from_bytes(&output[..])
 						.into_item()
 						.map(|bytes| {
 							Decode::decode(&mut &bytes[..]).map_err(ErrorWrapper::Decoding)

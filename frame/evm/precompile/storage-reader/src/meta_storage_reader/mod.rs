@@ -35,10 +35,10 @@ mod weights;
 /// - raw value bytes (with applied offset and length)
 ///
 /// Input:
-/// - compact encoded length of the pallet name (UTF-8)
-/// - pallet name (UTF-8)
-/// - compact encoded length of the pallet's storage member name (UTF-8)
-/// - pallet's storage member name (UTF-8)
+/// - compact encoded length of the pallet name (raw bytes)
+/// - pallet name as raw bytes
+/// - compact encoded length of the pallet's storage member name (raw bytes)
+/// - pallet's storage member name as raw bytes
 /// - byte representing amount of keys to be used:
 ///     - 0 will be treated as a NoKey (`Plain` entity access)
 ///     - any value rather than 0 will be treated as a MapKey (`Map`, `DoubleMap` etc entities access)
